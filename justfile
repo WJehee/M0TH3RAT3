@@ -6,7 +6,7 @@ _default:
 run:
     cargo run
 
-# Run in cool-retro-term
+# Run cool retro terminal
 cool-run:
     cool-retro-term --profile "Monochrome Green" &
 

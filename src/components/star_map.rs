@@ -1,5 +1,6 @@
-use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{block::Title, canvas::{Canvas, Circle, Context, Line}, Block}};
-use symbols::border;
+use std::rc::Rc;
+
+use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context, Line}}};
 
 #[derive(Debug)]
 struct Location {
@@ -10,6 +11,12 @@ struct Location {
 }
 
 impl Location {
+    pub fn new(x: f64, y: f64, radius: f64, color: Color) -> Self {
+        Self {
+            x, y, radius, color,
+        }
+    }
+    
     pub fn draw(&self, ctx: &mut Context, highlighted: Option<Color>) {
         ctx.draw(&Circle {
             x: self.x,
@@ -43,24 +50,12 @@ pub struct StarMap {
 impl StarMap {
     pub fn new() -> Self {
         let mut locations = Vec::new();
-        locations.push(Location {
-            x: 50.0,
-            y: 80.0,
-            radius: 5.0,
-            color: Color::Magenta,
-        });
-        locations.push(Location {
-            x: 30.0,
-            y: 20.0,
-            radius: 8.0,
-            color: Color::Red,
-        });
-        locations.push(Location {
-            x: 80.0,
-            y: 30.0,
-            radius: 3.0,
-            color: Color::LightGreen,
-        });
+        let p1 = Location::new(50.0, 80.0, 5.0, Color::Magenta);
+        let p2 = Location::new(30.0, 20.0, 8.0, Color::Red);
+        let p3 = Location::new(80.0, 30.0, 3.0, Color::LightGreen);
+        locations.push(p1);
+        locations.push(p2);
+        locations.push(p3);
         StarMap { 
             locations,
             selected_location: 0,
