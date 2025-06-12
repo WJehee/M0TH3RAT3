@@ -49,16 +49,27 @@ enum MenuItem {
 struct MenuState {
     list_state: ListState,
     selected: MenuItem,
+    active: MenuItem,
 }
 
 impl MenuState {
     fn select(&mut self, offset: i8) {
-        // TODO: wraps around on the bottom but not on the top, fix it
-        self.selected = match FromPrimitive::from_i8(self.selected as i8 + offset) {
-            Some(d2) => d2,
-            None => FromPrimitive::from_u8(0).unwrap(),
-        };
+        let current = self.selected as i8;
+        let next = current + offset;
+        if next == -1 { 
+            // Set to last item in the list
+            self.selected = MenuItem::Info
+        } else {
+            self.selected = match FromPrimitive::from_i8(next) {
+                Some(d2) => d2,
+                None => FromPrimitive::from_u8(0).unwrap(),
+            };
+        }
         self.list_state.select(self.selected.to_usize());
+    }
+
+    fn activate(&mut self) {
+        self.active = self.selected;
     }
 }
 
@@ -76,6 +87,7 @@ impl App {
             menu: MenuState {
                 list_state: ListState::default().with_selected(Some(0)),
                 selected: MenuItem::StarMap,
+                active: MenuItem::StarMap,
             },
             starmap: StarMap::new(),
         }
@@ -111,27 +123,27 @@ impl App {
             KeyCode::Char('q')  => { self.exit = true; },
             KeyCode::Up         => { self.menu.select(-1); },
             KeyCode::Down       => { self.menu.select(1); },
-            KeyCode::Enter      => {},
+            KeyCode::Enter      => { self.menu.activate(); },
             _ => {},
         }
     }
 
     fn render_title(&mut self, area: Rect, buf: &mut Buffer) {
         let instructions = Title::from(Line::from(vec![
-                " Select ".into(),
-                "<Enter>".green().bold(),
-                " Move up ".into(),
-                "<Up>".green().bold(),
-                " Move down ".into(),
-                "<Down>".green().bold(),
-                " Quit ".into(),
-                "<Q> ".green().bold(),
+            " Select ".into(),
+            "<Enter>".green().bold(),
+            " Move up ".into(),
+            "<Up>".green().bold(),
+            " Move down ".into(),
+            "<Down>".green().bold(),
+            " Quit ".into(),
+            "<Q> ".green().bold(),
         ]));
         let block = Block::bordered()
             .title(
                 instructions
-                .alignment(Alignment::Center)
-                .position(Position::Bottom),
+                    .alignment(Alignment::Center)
+                    .position(Position::Bottom),
             )
             .border_set(border::THICK);
 
@@ -162,7 +174,7 @@ impl App {
                 .fg(Color::Green)
             )
             .repeat_highlight_symbol(true);
-        
+
         ratatui::prelude::StatefulWidget::render(menu, menu_pos, buf, &mut self.menu.list_state);
     }
 }
@@ -171,9 +183,9 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [left, right] = Layout::horizontal([
-                Constraint::Percentage(35),
-                Constraint::Percentage(65),
-            ]).areas(area);
+            Constraint::Percentage(35),
+            Constraint::Percentage(65),
+        ]).areas(area);
 
         let [title, list, ship_status] = Layout::default()
             .direction(Direction::Vertical)
@@ -188,14 +200,14 @@ impl Widget for &mut App {
         self.render_list(list, buf);
         ShipStatus.render(ship_status, buf);
 
-        let title = Title::from(self.menu.selected.as_ref().bold());
+        let title = Title::from(self.menu.active.as_ref().bold());
         let block = Block::bordered()
             .title(title.alignment(Alignment::Center))
             .border_set(border::THICK);
         let inner = block.inner(right);
         block.render(right, buf);
 
-        match self.menu.selected {
+        match self.menu.active {
             MenuItem::StarMap   => { self.starmap.render(inner, buf); },
             MenuItem::Crew      => {},
             MenuItem::Info      => {},
