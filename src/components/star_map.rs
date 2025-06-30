@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context, Line}}};
 
 #[derive(Debug)]
