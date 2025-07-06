@@ -10,6 +10,7 @@ mod tui;
 mod app;
 mod components;
 mod storage;
+mod util;
 
 fn main() -> Result<()> {
     let path = std::env::args().nth(1);

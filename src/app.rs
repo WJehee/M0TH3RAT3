@@ -13,30 +13,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 
 use ratatui::prelude::*;
 
-use crate::{components::{login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui};
-
-const TITLE_HEADER: &str = r#"
-     _                      _______                      _      
-  _dMMMb._              .adOOOOOOOOOba.              _,dMMMb_   
- dP'  ~YMMb            dOOOOOOOOOOOOOOOb            aMMP~  `Yb  
- V      ~"Mb          dOOOOOOOOOOOOOOOOOb          dM"~      V  
-          `Mb.       dOOOOOOOOOOOOOOOOOOOb       ,dM'           
-           `YMb._   |OOOOOOOOOOOOOOOOOOOOO|   _,dMP'            
-      __     `YMMM| OP'~"YOOOOOOOOOOOP"~`YO |MMMP'     __       
-    ,dMMMb.     ~~' OO     `YOOOOOP'     OO `~~     ,dMMMb.     
- _,dP~  `YMba_      OOb      `OOO'      dOO      _aMMP'  ~Yb._  
-             `YMMMM\`OOOo     OOO     oOOO'/MMMMP'              
-     ,aa.     `~YMMb `OOOb._,dOOOb._,dOOO'dMMP~'       ,aa.     
-   ,dMYYMba._         `OOOOOOOOOOOOOOOOO'          _,adMYYMb.   
-  ,MP'   `YMMba._      OOOOOOOOOOOOOOOOO       _,adMMP'   `YM.  
-  MP'        ~YMMMba._ YOOOOPVVVVVYOOOOP  _,adMMMMP~       `YM  
-  YMb           ~YMMMM\`OOOOI`````IOOOOO'/MMMMP~           dMP  
-   `Mb.           `YMMMb`OOOI,,,,,IOOOO'dMMMP'           ,dM'   
-     `'                  `OObNNNNNdOO'                   `'     
-                           `~OOOOO~'                            
-
-M0TH3R@3-OS
-"#;
+use crate::{components::{login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
 
 #[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive, strum::AsRefStr)]
 enum MenuItem {
@@ -93,10 +70,15 @@ impl App {
             Some(path) => Storage::load(path).expect("storage path to be valid"),
             None => Storage::new(),
         };
+        // let user = User {
+        //     username: String::from("user"),
+        //     password: String::from("test"),
+        // };
         Self {
             exit: false,
             storage: storage,
 
+            // user: Some(user),
             user: None,
             loginscreen: LoginScreen::new(),
 
@@ -173,7 +155,7 @@ impl App {
             )
             .border_set(border::THICK);
 
-        let mut text = Text::from(TITLE_HEADER)
+        let mut text = Text::from(util::TITLE_HEADER)
             .fg(Color::Green);
 
         let user = self.user.clone().expect("we are past login at this point");

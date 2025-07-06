@@ -1,8 +1,9 @@
 use ratatui::{
-    crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::Widget
+    crossterm::event::{KeyCode, KeyEvent}, prelude::*, symbols::border, widgets::{Block, Padding, Paragraph, Widget}
 };
-
 use bincode::{Decode, Encode};
+
+use crate::util;
 
 #[derive(Decode, Encode, Debug, Clone, PartialEq)]
 pub struct User {
@@ -46,13 +47,33 @@ impl LoginScreen {
 
 impl Widget for &LoginScreen {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let text = Text::from(vec![
-            Line::from("username"),
-            Line::from(self.username.clone()),
-            Line::from("password"),
-            Line::from("*".repeat(self.password.len())),
-        ]);
-        text.render(area, buf);
+        let mut text = Text::from(util::TITLE_HEADER)
+            .fg(Color::Green);
+
+        let lines: Vec<_> = vec![
+            Line::from(""),
+            Line::from(""),
+            Line::from(""),
+            Line::from("USERNAME".red()),
+            Line::from(self.username.clone().white()),
+            Line::from("PASSWORD".red()),
+            Line::from("*".repeat(self.password.len()).white()),
+        ];
+        text.extend(Text::from(lines));
+
+        let area = util::center(
+            area,
+            Constraint::Length((text.width()+10) as u16),
+            Constraint::Length((text.height()+5) as u16),
+        );
+
+        let block = Block::bordered()
+            .border_type(ratatui::widgets::BorderType::Double);
+
+        Paragraph::new(text)
+            .block(block)
+            .centered()
+            .render(area, buf);
     }
 }
 
