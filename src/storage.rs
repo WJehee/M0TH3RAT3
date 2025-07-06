@@ -24,10 +24,10 @@ impl Storage {
         }
     }
 
-    pub fn try_login(self, username: &str, password: &str) -> Option<User> {
-        for user in self.users {
+    pub fn try_login(&self, username: &str, password: &str) -> Option<User> {
+        for user in &self.users {
             if user.username == username && user.password == password {
-                return Some(user);
+                return Some(user.clone());
             }
         }
         None

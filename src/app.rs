@@ -98,7 +98,7 @@ impl App {
             storage: storage,
 
             user: None,
-            loginscreen: LoginScreen{},
+            loginscreen: LoginScreen::new(),
 
             menu: MenuState {
                 list_state: ListState::default().with_selected(Some(0)),
@@ -138,7 +138,15 @@ impl App {
 
     fn handle_press_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q')  => { self.exit = true; },
+            // Key's for all widgets
+            KeyCode::Esc        => { self.exit = true; },
+            // Login screen handler
+            KeyCode::Enter if self.user == None => {
+                self.user = self.storage.try_login(&self.loginscreen.username, &self.loginscreen.password);
+            },
+            _ if self.user == None => self.loginscreen.handle_press_event(key_event),
+
+            // Other
             KeyCode::Up         => { self.menu.select(-1); },
             KeyCode::Down       => { self.menu.select(1); },
             KeyCode::Enter      => { self.menu.activate(); },
@@ -155,7 +163,7 @@ impl App {
             " Move down ".into(),
             "<Down>".green().bold(),
             " Quit ".into(),
-            "<Q> ".green().bold(),
+            "<Esc> ".green().bold(),
         ]));
         let block = Block::bordered()
             .title(
@@ -165,8 +173,13 @@ impl App {
             )
             .border_set(border::THICK);
 
-        let text = Text::from(TITLE_HEADER)
+        let mut text = Text::from(TITLE_HEADER)
             .fg(Color::Green);
+
+        let user = self.user.clone().expect("we are past login at this point");
+        text.extend(Line::from(
+            format!("Logged in as: {}", user.username.clone())
+        ));
 
         Paragraph::new(text)
             .centered()
@@ -213,9 +226,9 @@ impl Widget for &mut App {
         let [title, list, ship_status] = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(35),
-                Constraint::Percentage(25),
                 Constraint::Percentage(40),
+                Constraint::Percentage(25),
+                Constraint::Percentage(35),
             ])
             .areas(left);
 
