@@ -13,7 +13,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 
 use ratatui::prelude::*;
 
-use crate::{components::{ship_status::ShipStatus, star_map::StarMap}, tui};
+use crate::{components::{login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui};
 
 const TITLE_HEADER: &str = r#"
      _                      _______                      _      
@@ -76,14 +76,30 @@ impl MenuState {
 #[derive(Debug)]
 pub struct App {
     exit: bool,
+    storage: Storage,
+
+    // Login requirements
+    user: Option<User>,
+    loginscreen: LoginScreen,
+
+    // Post login
     menu: MenuState,
     starmap: StarMap,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(storage_path: Option<String>) -> Self {
+        let storage = match storage_path {
+            Some(path) => Storage::load(path).expect("storage path to be valid"),
+            None => Storage::new(),
+        };
         Self {
             exit: false,
+            storage: storage,
+
+            user: None,
+            loginscreen: LoginScreen{},
+
             menu: MenuState {
                 list_state: ListState::default().with_selected(Some(0)),
                 selected: MenuItem::StarMap,
@@ -98,6 +114,8 @@ impl App {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
         }
+        let copy = self.storage.clone();
+        let _ = copy.save();
         Ok(())
     }
 
@@ -182,6 +200,11 @@ impl App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        if self.user == None {
+            self.loginscreen.render(area, buf);
+            return;
+        }
+
         let [left, right] = Layout::horizontal([
             Constraint::Percentage(35),
             Constraint::Percentage(65),

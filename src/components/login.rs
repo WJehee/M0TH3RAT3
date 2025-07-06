@@ -1,37 +1,28 @@
-use ratatui::prelude::*;
-use ratatui::widgets::Widget;
+use ratatui::{
+    prelude::*,
+    widgets::Widget,
+    crossterm::event::{KeyEvent},
+};
 
-use crate::DB;
+use bincode::{Decode, Encode};
 
-struct User {
-    username: String,
-    password: String,
+#[derive(Decode, Encode, Debug, Clone, PartialEq)]
+pub struct User {
+    pub username: String,
+    pub password: String,
 }
 
-pub fn login_user(username: &str, password: &str) -> Option<User> {
-    let db = DB.lock().unwrap();
-    let pw: String = db.query_one("SELECT password FROM users WHERE username=?", ((username),), |row| row.get(0)).ok()?;
+#[derive(Debug)]
+pub struct LoginScreen;
 
-    if pw != password { return None }
-
-    let user = User {
-        username: String::from("bob"),
-        password: String::from("bob"),
-    };
-
-    Some(user)
+impl LoginScreen {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent) {
+    }
 }
 
-struct LoginScreen;
-
-// impl LoginScreen {
-//     pub fn handle_press_event(&mut self, key_event: KeyEvent) {
-//     }
-// }
-
-// impl Widget for &LoginScreen {
-//     pub fn render(self, area: Rect, buf: &mut Buffer) {
-//
-//     }
-// }
+impl Widget for &LoginScreen {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        
+    }
+}
 
