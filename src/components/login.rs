@@ -35,6 +35,8 @@ impl LoginScreen {
                 false => self.username.push(char),
                 true => self.password.push(char),
             },
+            // For some reason this does not work in cool-retro-term, something weird with stty and
+            // command codes, it uses ^H instead of ^?
             KeyCode::Backspace => match self.on_password {
                 false => { self.username.pop(); },
                 true => { self.password.pop(); },
@@ -42,6 +44,12 @@ impl LoginScreen {
             KeyCode::Tab => self.on_password = !self.on_password,
             _ => {},
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.username.clear();
+        self.password.clear();
+        self.on_password = false;
     }
 }
 

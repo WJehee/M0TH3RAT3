@@ -125,6 +125,10 @@ impl App {
             // Login screen handler
             KeyCode::Enter if self.user == None => {
                 self.user = self.storage.try_login(&self.loginscreen.username, &self.loginscreen.password);
+                if self.user == None {
+                    // TODO: show an error popup given login has failed
+                    self.loginscreen.clear();
+                }
             },
             _ if self.user == None => self.loginscreen.handle_press_event(key_event),
 
