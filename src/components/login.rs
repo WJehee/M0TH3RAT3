@@ -1,5 +1,5 @@
 use ratatui::{
-    crossterm::event::{KeyCode, KeyEvent}, prelude::*, symbols::border, widgets::{Block, Padding, Paragraph, Widget}
+    crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{Block, Paragraph, Widget}
 };
 use bincode::{Decode, Encode};
 

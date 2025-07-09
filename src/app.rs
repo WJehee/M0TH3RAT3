@@ -13,7 +13,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 
 use ratatui::prelude::*;
 
-use crate::{components::{login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
+use crate::{components::{galaxy_map::GalaxyMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
 
 #[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive, strum::AsRefStr)]
 enum MenuItem {
@@ -62,6 +62,7 @@ pub struct App {
     // Post login
     menu: MenuState,
     starmap: StarMap,
+    galaxy: GalaxyMap,
 }
 
 impl App {
@@ -88,6 +89,7 @@ impl App {
                 active: MenuItem::StarMap,
             },
             starmap: StarMap::new(),
+            galaxy: GalaxyMap::new(),
         }
     }
 
@@ -108,11 +110,12 @@ impl App {
     fn handle_events(&mut self) -> io::Result<()> {
         if let event::Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
+                self.galaxy.handle_press_event(key);
                 self.handle_press_event(key);
-                match self.menu.selected {
-                    MenuItem::StarMap => { self.starmap.handle_press_event(key); },
-                    _ => {}
-                }
+                // match self.menu.selected {
+                //     MenuItem::StarMap => { self.starmap.handle_press_event(key); },
+                //     _ => {}
+                // }
             }
         }
         Ok(())
@@ -199,6 +202,8 @@ impl App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        self.galaxy.render(area, buf);
+        return;
         if self.user == None {
             self.loginscreen.render(area, buf);
             return;

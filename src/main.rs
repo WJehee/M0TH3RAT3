@@ -11,6 +11,7 @@ mod app;
 mod components;
 mod storage;
 mod util;
+mod planet;
 
 fn main() -> Result<()> {
     let path = std::env::args().nth(1);
