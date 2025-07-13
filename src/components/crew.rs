@@ -118,7 +118,21 @@ _______________________
 struct CrewMember {
     name: String,
     picture: String,
-    health: u8,
+    role: String,
+    location: String,
+    vitality: u8,
+}
+
+impl CrewMember {
+    pub fn new(name: String, picture: String, role: String) -> CrewMember {
+        CrewMember {
+            name,
+            picture,
+            role,
+            location: String::from("???"),
+            vitality: 1,
+        }
+    }
 }
 
 impl Widget for &CrewMember {
@@ -159,42 +173,12 @@ impl Widget for &CrewStatus {
         let [top_left, mid_left, bot_left] = cards.areas(col_left);
         let [top_right, mid_right, bot_right] = cards.areas(col_right);
 
-        CrewMember {
-            name: String::from("Yoda"),
-            picture: String::from(YODA),
-            health: 10,
-        }.render(top_left, buf);
-
-        CrewMember {
-            name: String::from("Bob"),
-            picture: String::from(BOB),
-            health: 11,
-        }.render(mid_right, buf);
-
-        CrewMember {
-            name: String::from("Jack Skellington"),
-            picture: String::from(SKELETON),
-            health: 0,
-        }.render(top_right, buf);
-
-        CrewMember {
-            name: String::from("Ally"),
-            picture: String::from(ALIEN),
-            health: 200,
-        }.render(bot_right, buf);
-
-        CrewMember {
-            name: String::from("???"),
-            picture: String::from(XENOMORPH),
-            health: 255,
-        }.render(mid_left, buf);
-
-        CrewMember {
-            name: String::from("Yabooiiii"),
-            picture: String::from(GUY),
-            health: 15,
-        }.render(bot_left, buf);
+        CrewMember::new(String::from("Yoda"), String::from(YODA), String::new()).render(top_left, buf);
+        CrewMember::new(String::from("Jack Skellington"), String::from(SKELETON), String::new()).render(top_right, buf);
+        CrewMember::new(String::from("???"), String::from(XENOMORPH), String::new()).render(mid_left, buf);
+        CrewMember::new(String::from("Bob"), String::from(BOB), String::new()).render(mid_right, buf);
+        CrewMember::new(String::from("Yabooiiii"), String::from(GUY), String::new()).render(bot_left, buf);
+        CrewMember::new(String::from("Ally"), String::from(ALIEN), String::new()).render(bot_right, buf);
     }   
 }
-
 
