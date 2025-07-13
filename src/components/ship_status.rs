@@ -1,6 +1,4 @@
-use block::Title;
 use ratatui::{prelude::*, widgets::*};
-use ratatui::widgets::block::Position;
 use symbols::border;
 
 #[derive(Debug)]
@@ -52,13 +50,9 @@ pub struct ShipStatus;
 
 impl Widget for &ShipStatus {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Title::from(" Ship Status ".bold());
         let block = Block::bordered()
-            .title(
-                title
-                    .alignment(Alignment::Center)
-                    .position(Position::Bottom)
-            )
+            .title_bottom(" Ship Status ".bold())
+            .title_alignment(Alignment::Center)
             .border_set(border::THICK);
 
         let inner = block.inner(area);

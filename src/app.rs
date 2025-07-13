@@ -1,17 +1,17 @@
-use std::io;
-
-use ratatui::{
-    crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind},
-    symbols::border,
-    widgets::{
-        block::{Position, Title}, Block, List, ListState, Paragraph, Widget
-    },
-};
+use std::{io, time::Instant};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 use num_derive::{FromPrimitive, ToPrimitive};
 
-use ratatui::prelude::*;
+use ratatui::{
+    prelude::*,
+    symbols::border,
+    widgets::{
+        Block, List, ListState, Paragraph, Widget
+    },
+    crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind},
+};
+use tachyonfx::{fx, EffectManager};
 
 use crate::{components::{galaxy_map::GalaxyMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
 
@@ -50,10 +50,10 @@ impl MenuState {
     }
 }
 
-#[derive(Debug)]
 pub struct App {
     exit: bool,
     storage: Storage,
+    effects: EffectManager<()>,
 
     // Login requirements
     user: Option<User>,
@@ -71,10 +71,14 @@ impl App {
             Some(path) => Storage::load(path).expect("storage path to be valid"),
             None => Storage::new(),
         };
+        let mut effects: EffectManager<()> = EffectManager::default();
 
+        effects.add_effect(fx::coalesce(1000));
+        
         Self {
             exit: false,
             storage: storage,
+            effects: effects,
 
             user: None,
             loginscreen: LoginScreen::new(),
@@ -90,9 +94,20 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
+        let mut last_frame = Instant::now();
+
         while !self.exit {
-            terminal.draw(|frame| self.render_frame(frame))?;
+            let elapsed = last_frame.elapsed();
+            last_frame = Instant::now();
+
+            terminal.draw(|frame| {
+                self.render_frame(frame);
+                let area = frame.area();
+                self.effects.process_effects(elapsed.into(), frame.buffer_mut(), area);
+            })?;
+
             self.handle_events()?;
+
         }
         let copy = self.storage.clone();
         let _ = copy.save();
@@ -100,18 +115,20 @@ impl App {
     }
 
     fn render_frame(&mut self, frame: &mut Frame) {
-        frame.render_widget(self, frame.size());
+        frame.render_widget(self, frame.area());
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
-        if let event::Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                self.galaxy.handle_press_event(key);
-                self.handle_press_event(key);
-                // match self.menu.selected {
-                //     MenuItem::StarMap => { self.starmap.handle_press_event(key); },
-                //     _ => {}
-                // }
+        if event::poll(std::time::Duration::from_millis(16))? {
+            if let event::Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press {
+                    self.galaxy.handle_press_event(key);
+                    self.handle_press_event(key);
+                    // match self.menu.selected {
+                    //     MenuItem::StarMap => { self.starmap.handle_press_event(key); },
+                    //     _ => {}
+                    // }
+                }
             }
         }
         Ok(())
@@ -140,7 +157,7 @@ impl App {
     }
 
     fn render_title(&mut self, area: Rect, buf: &mut Buffer) {
-        let instructions = Title::from(Line::from(vec![
+        let instructions = Line::from(vec![
             " Select ".into(),
             "<Enter>".green().bold(),
             " Move up ".into(),
@@ -149,13 +166,10 @@ impl App {
             "<Down>".green().bold(),
             " Quit ".into(),
             "<Esc> ".green().bold(),
-        ]));
+        ]);
         let block = Block::bordered()
-            .title(
-                instructions
-                    .alignment(Alignment::Center)
-                    .position(Position::Bottom),
-            )
+            .title_bottom(instructions)
+            .title_alignment(Alignment::Center)
             .border_set(border::THICK);
 
         let mut text = Text::from(util::TITLE_HEADER)
@@ -198,8 +212,9 @@ impl App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.galaxy.render(area, buf);
-        return;
+        // self.galaxy.render(area, buf);
+        // return;
+       
         if self.user == None {
             self.loginscreen.render(area, buf);
             return;
@@ -223,9 +238,9 @@ impl Widget for &mut App {
         self.render_list(list, buf);
         ShipStatus.render(ship_status, buf);
 
-        let title = Title::from(self.menu.active.as_ref().bold());
         let block = Block::bordered()
-            .title(title.alignment(Alignment::Center))
+            .title(self.menu.active.as_ref().bold())
+            .title_alignment(Alignment::Center)
             .border_set(border::THICK);
         let inner = block.inner(right);
         block.render(right, buf);

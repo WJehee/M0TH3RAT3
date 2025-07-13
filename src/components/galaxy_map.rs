@@ -1,12 +1,12 @@
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{
         canvas::{
-            Canvas, Points, Rectangle
+            Canvas, Circle, Points, 
         }, Block, Widget
     }
 };
 
-const MOVE_DISTANCE: f64 = 0.08;
+const MOVE_DISTANCE: f64 = 0.1;
 
 #[derive(Debug)]
 enum SolarSystem {
@@ -43,11 +43,7 @@ impl GalaxyMap {
 
 impl Widget for &GalaxyMap {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let ratio = (area.height as f32) / (area.width as f32);
-
-        let square_size = 10;
-        // let square = Rect::default()
-        //     .block(Block::default());
+        let ratio = 1 as f32 - (area.height as f32) / (area.width as f32);
 
         let layout = Layout::default()
             .direction(Direction::Horizontal)
@@ -61,17 +57,16 @@ impl Widget for &GalaxyMap {
             .block(Block::bordered().title("Galaxy map"))
             .paint(|ctx| {
                 ctx.draw(&Points {coords: &self.coords, color: Color::White});
-                ctx.draw(&Rectangle {
+                ctx.draw(&Circle{
                     x: self.current_pos_x,
                     y: self.current_pos_y,
-                    width: MOVE_DISTANCE * 2.0,
-                    height: MOVE_DISTANCE * 2.0,
+                    radius: MOVE_DISTANCE * 2.0,
                     color: Color::Gray,
                 });
             })
             .x_bounds([-10.0, 10.0])
             .y_bounds([-10.0, 10.0])
-            .render(layout[1], buf);
+            .render(layout[0], buf);
     }
 }
 
