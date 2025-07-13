@@ -73,7 +73,7 @@ impl App {
         };
         let mut effects: EffectManager<()> = EffectManager::default();
 
-        effects.add_effect(fx::coalesce(1000));
+        effects.add_effect(fx::coalesce(3000));
         
         Self {
             exit: false,
@@ -144,6 +144,9 @@ impl App {
                 if self.user == None {
                     // TODO: show an error popup given login has failed
                     self.loginscreen.clear();
+                } else {
+                    // Successfull login, add new transition effect
+                    self.effects.add_effect(fx::coalesce(1000));
                 }
             },
             _ if self.user == None => self.loginscreen.handle_press_event(key_event),
