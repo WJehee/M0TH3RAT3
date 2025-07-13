@@ -6,7 +6,7 @@ use ratatui::{
     }
 };
 
-const MOVE_DISTANCE: f64 = 0.2;
+const MOVE_DISTANCE: f64 = 0.08;
 
 #[derive(Debug)]
 enum SolarSystem {
@@ -43,6 +43,8 @@ impl GalaxyMap {
 
 impl Widget for &GalaxyMap {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let ratio = (area.height as f32) / (area.width as f32);
+
         let square_size = 10;
         // let square = Rect::default()
         //     .block(Block::default());
@@ -50,20 +52,20 @@ impl Widget for &GalaxyMap {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
-                Constraint::Length(square_size),
+                Constraint::Percentage((ratio * 100.0) as u16),
                 Constraint::Min(0),
             ])
                 .split(area);
 
         Canvas::default()
-            .block(Block::bordered().title("Canvas"))
+            .block(Block::bordered().title("Galaxy map"))
             .paint(|ctx| {
                 ctx.draw(&Points {coords: &self.coords, color: Color::White});
                 ctx.draw(&Rectangle {
                     x: self.current_pos_x,
                     y: self.current_pos_y,
-                    width: MOVE_DISTANCE,
-                    height: MOVE_DISTANCE,
+                    width: MOVE_DISTANCE * 2.0,
+                    height: MOVE_DISTANCE * 2.0,
                     color: Color::Gray,
                 });
             })

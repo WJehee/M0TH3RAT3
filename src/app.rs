@@ -71,15 +71,11 @@ impl App {
             Some(path) => Storage::load(path).expect("storage path to be valid"),
             None => Storage::new(),
         };
-        // let user = User {
-        //     username: String::from("user"),
-        //     password: String::from("test"),
-        // };
+
         Self {
             exit: false,
             storage: storage,
 
-            // user: Some(user),
             user: None,
             loginscreen: LoginScreen::new(),
 

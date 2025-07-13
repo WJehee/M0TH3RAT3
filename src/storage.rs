@@ -1,11 +1,11 @@
 use std::{fs::File, io::{Read, Write}};
 
-use bincode::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 use color_eyre::Result;
 
 use crate::components::login::User;
 
-#[derive(Decode, Encode, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Storage {
     pub path: String,
     pub users: Vec<User>,
@@ -19,7 +19,7 @@ impl Storage {
             password: String::from("groep1"),
         });
         Storage {
-            path: String::from("default.bin"),
+            path: String::from("default.json"),
             users
         }
     }
@@ -35,21 +35,18 @@ impl Storage {
 
     pub fn load(storage_path: String) -> Result<Storage> {
         let mut file = File::open(storage_path)?;
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer)?;
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)?;
 
-        let config = bincode::config::standard();
-        let (result, _bytes_read) = bincode::decode_from_slice(&buffer, config)?;
+        let result: Storage = serde_json::from_str(&buffer)?;
+
         Ok(result)
     }
 
     pub fn save(self) -> Result<()> {
         let mut file = File::create(&self.path)?;
 
-        let config = bincode::config::standard();
-        let encoded = bincode::encode_to_vec(self, config)?;
-
-        file.write_all(&encoded)?;
+        file.write_all(&serde_json::to_vec_pretty(&self)?)?;
         Ok(())
     }
 }

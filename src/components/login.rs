@@ -1,11 +1,11 @@
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{Block, Paragraph, Widget}
 };
-use bincode::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 
 use crate::util;
 
-#[derive(Decode, Encode, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct User {
     pub username: String,
     pub password: String,
