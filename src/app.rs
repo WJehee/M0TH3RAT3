@@ -13,11 +13,12 @@ use ratatui::{
 };
 use tachyonfx::{fx, EffectManager};
 
-use crate::{components::{galaxy_map::GalaxyMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
+use crate::{components::{galaxy_map::GalacticMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
 
 #[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive, strum::AsRefStr)]
 enum MenuItem {
-    StarMap = 0,
+    GalacticMap = 0,
+    StarMap,
     Crew,
     Info,
 }
@@ -62,7 +63,7 @@ pub struct App {
     // Post login
     menu: MenuState,
     starmap: StarMap,
-    galaxy: GalaxyMap,
+    galaxy: GalacticMap,
 }
 
 impl App {
@@ -72,8 +73,10 @@ impl App {
             None => Storage::new(),
         };
         let mut effects: EffectManager<()> = EffectManager::default();
-
-        effects.add_effect(fx::coalesce(3000));
+        // Init effect
+        effects.add_effect(
+            fx::prolong_start(0, fx::coalesce(3000))
+        );
         
         Self {
             exit: false,
@@ -85,11 +88,11 @@ impl App {
 
             menu: MenuState {
                 list_state: ListState::default().with_selected(Some(0)),
-                selected: MenuItem::StarMap,
-                active: MenuItem::StarMap,
+                selected: MenuItem::GalacticMap,
+                active: MenuItem::GalacticMap,
             },
             starmap: StarMap::new(),
-            galaxy: GalaxyMap::new(),
+            galaxy: GalacticMap::new(),
         }
     }
 
@@ -122,12 +125,13 @@ impl App {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    self.galaxy.handle_press_event(key);
+                    // self.galaxy.handle_press_event(key);
                     self.handle_press_event(key);
-                    // match self.menu.selected {
-                    //     MenuItem::StarMap => { self.starmap.handle_press_event(key); },
-                    //     _ => {}
-                    // }
+                    match self.menu.selected {
+                        MenuItem::GalacticMap => {self.galaxy.handle_press_event(key); }
+                        MenuItem::StarMap => { self.starmap.handle_press_event(key); },
+                        _ => {}
+                    }
                 }
             }
         }
@@ -154,7 +158,12 @@ impl App {
             // Other
             KeyCode::Up         => { self.menu.select(-1); },
             KeyCode::Down       => { self.menu.select(1); },
-            KeyCode::Enter      => { self.menu.activate(); },
+            KeyCode::Enter      => { 
+                self.menu.activate();
+
+                // TODO: apply the effect only to the submodule / widget in the screen
+                // self.effects.add_effect(fx::coalesce(1000));
+            },
             _ => {},
         }
     }
@@ -197,6 +206,7 @@ impl App {
         ]).areas(area);
 
         let menu = List::new([
+            Line::from(MenuItem::GalacticMap.as_ref()).alignment(Alignment::Center),
             Line::from(MenuItem::StarMap.as_ref()).alignment(Alignment::Center),
             Line::from(MenuItem::Crew.as_ref()).alignment(Alignment::Center),
             Line::from(MenuItem::Info.as_ref()).alignment(Alignment::Center),
@@ -215,9 +225,6 @@ impl App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        // self.galaxy.render(area, buf);
-        // return;
-       
         if self.user == None {
             self.loginscreen.render(area, buf);
             return;
@@ -249,6 +256,7 @@ impl Widget for &mut App {
         block.render(right, buf);
 
         match self.menu.active {
+            MenuItem::GalacticMap => { self.galaxy.render(inner, buf); }
             MenuItem::StarMap   => { self.starmap.render(inner, buf); },
             MenuItem::Crew      => {},
             MenuItem::Info      => {},
