@@ -53,6 +53,8 @@ impl MenuState {
 
 pub struct App {
     exit: bool,
+    last_key_pressed: Option<event::KeyEvent>,
+    last_press_time: Instant,
     storage: Storage,
     effects: EffectManager<()>,
 
@@ -80,6 +82,8 @@ impl App {
         
         Self {
             exit: false,
+            last_key_pressed: None,
+            last_press_time: Instant::now(),
             storage: storage,
             effects: effects,
 
@@ -122,18 +126,26 @@ impl App {
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
-        if event::poll(std::time::Duration::from_millis(16))? {
+        if event::poll(std::time::Duration::from_millis(50))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    // self.galaxy.handle_press_event(key);
+                    // Only set when the key is different
+                    if self.last_key_pressed != Some(key) {
+                        self.last_press_time = Instant::now();
+                        self.last_key_pressed = Some(key);
+                    }
+
                     self.handle_press_event(key);
                     match self.menu.selected {
-                        MenuItem::GalacticMap => {self.galaxy.handle_press_event(key); }
-                        MenuItem::StarMap => { self.starmap.handle_press_event(key); },
+                        MenuItem::GalacticMap => { self.galaxy.handle_press_event(key); }
+                        MenuItem::StarMap => { self.starmap.handle_press_event(key, self.last_key_pressed, self.last_press_time); },
                         _ => {}
                     }
                 }
             }
+        } else {
+            // No key was pressed, reset 
+            self.last_key_pressed = None;
         }
         Ok(())
     }

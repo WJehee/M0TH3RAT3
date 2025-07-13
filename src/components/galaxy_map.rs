@@ -1,22 +1,25 @@
+use std::collections::HashMap;
+
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{
         canvas::{
             Canvas, Circle, Points, 
-        }, Block, Widget
+        }, LineGauge, Widget
     }
 };
 
 const MOVE_DISTANCE: f64 = 0.1;
 
 #[derive(Debug)]
-enum SolarSystem {
-    None,
-    Something
+struct SolarSystem {
+    name: String,
+    
 }
 
 #[derive(Debug)]
 pub struct GalacticMap {
     coords: Vec<(f64, f64)>,
+    systems: HashMap<(f64, f64), SolarSystem>,
     current_pos_x: f64,
     current_pos_y: f64,
 }
@@ -25,6 +28,7 @@ impl GalacticMap {
     pub fn new() -> Self {
         GalacticMap {
             coords: vec![(7.0, 8.0), (3.0, 2.0), (4.0, 5.0)],
+            systems: HashMap::new(),
             current_pos_x: 0.0,
             current_pos_y: 0.0,
         }
@@ -44,7 +48,6 @@ impl GalacticMap {
 impl Widget for &GalacticMap {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Canvas::default()
-            .block(Block::bordered().title("Galaxy map"))
             .paint(|ctx| {
                 ctx.draw(&Points {coords: &self.coords, color: Color::White});
                 ctx.draw(&Circle{
@@ -57,6 +60,7 @@ impl Widget for &GalacticMap {
             .x_bounds([-10.0, 10.0])
             .y_bounds([-10.0, 10.0])
             .render(area, buf);
+
     }
 }
 

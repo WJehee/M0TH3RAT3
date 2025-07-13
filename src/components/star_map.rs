@@ -1,4 +1,8 @@
-use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context, Line}}};
+use std::time::Duration;
+
+use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context, Line}, Block, LineGauge}};
+
+const WARP_HOLD_DURATION: u64 = 1;
 
 #[derive(Debug)]
 struct Location {
@@ -43,6 +47,7 @@ pub struct StarMap {
     locations: Vec<Location>,
     selected_location: usize,
     current_location: usize,
+    warp_progress: f64,
 }
 
 impl StarMap {
@@ -58,19 +63,26 @@ impl StarMap {
             locations,
             selected_location: 0,
             current_location: 0,
+            warp_progress: 0.0,
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant) {
         match key_event.code {
             KeyCode::Left   => { self.selected_location = (self.selected_location + self.locations.len() - 1) % self.locations.len() },
             KeyCode::Right  => { self.selected_location = (self.selected_location + self.locations.len() + 1) % self.locations.len() },
             KeyCode::Enter  => { 
-                if self.current_location == self.selected_location {
-                    // TODO: display popup with location info
-                } else {
-                    // TODO: fill up gauge before travelling by holding / not cancelling
-                    self.current_location = self.selected_location
+                if let Some(key) = last_key_pressed {
+                    if key == key_event {
+                        self.warp_progress = last_press_time.elapsed().as_secs_f64() / Duration::from_secs(WARP_HOLD_DURATION).as_secs_f64();
+                        if self.warp_progress > 1.0 {
+                            self.warp_progress = 1.0;
+                        }
+                    }
+                    if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
+                        self.current_location = self.selected_location;
+                        self.warp_progress = 0.0;
+                    }
                 }
             }
             _ => {},
@@ -80,6 +92,11 @@ impl StarMap {
 
 impl Widget for &StarMap {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let [main, bar] = Layout::vertical([
+            Constraint::Percentage(95),
+            Constraint::Percentage(5),
+        ]).areas(area);
+
         Canvas::default()
             .paint(|ctx| {
                 // Draw each location
@@ -110,7 +127,19 @@ impl Widget for &StarMap {
             })
             .x_bounds([0.0, 100.0])
             .y_bounds([0.0, 100.0])
-            .render(area, buf);
+            .render(main, buf);
+
+        let line_gauge = LineGauge::default()
+            .block(Block::bordered().title("Warp"))
+            .filled_style(
+                Style::default()
+                .fg(Color::Yellow)
+                .bg(Color::Black)
+                .add_modifier(Modifier::ITALIC),
+            )
+            .line_set(symbols::line::THICK)
+            .ratio(self.warp_progress);
+        line_gauge.render(bar, buf);
     }
 }
 

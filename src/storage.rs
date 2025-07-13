@@ -15,8 +15,8 @@ impl Storage {
     pub fn new() -> Storage {
         let mut users = Vec::new();
         users.push(User {
-            username: String::from("groep1"),
-            password: String::from("groep1"),
+            username: String::from("1"),
+            password: String::from("1"),
         });
         Storage {
             path: String::from("default.json"),
