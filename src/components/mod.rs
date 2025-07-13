@@ -2,3 +2,4 @@ pub mod galaxy_map;
 pub mod star_map;
 pub mod ship_status;
 pub mod login;
+pub mod crew;

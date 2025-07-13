@@ -13,7 +13,7 @@ use ratatui::{
 };
 use tachyonfx::{fx, EffectManager};
 
-use crate::{components::{galaxy_map::GalacticMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
+use crate::{components::{crew::CrewStatus, galaxy_map::GalacticMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
 
 #[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive, strum::AsRefStr)]
 enum MenuItem {
@@ -66,6 +66,7 @@ pub struct App {
     menu: MenuState,
     starmap: StarMap,
     galaxy: GalacticMap,
+    crew: CrewStatus,
 }
 
 impl App {
@@ -97,6 +98,7 @@ impl App {
             },
             starmap: StarMap::new(),
             galaxy: GalacticMap::new(),
+            crew: CrewStatus{},
         }
     }
 
@@ -270,7 +272,7 @@ impl Widget for &mut App {
         match self.menu.active {
             MenuItem::GalacticMap => { self.galaxy.render(inner, buf); }
             MenuItem::StarMap   => { self.starmap.render(inner, buf); },
-            MenuItem::Crew      => {},
+            MenuItem::Crew      => { self.crew.render(inner, buf); },
             MenuItem::Info      => {},
         }
     }
