@@ -9,21 +9,25 @@ use crate::util;
 pub struct User {
     pub username: String,
     pub password: String,
+    pub pos_x: f64,
+    pub pox_y: f64,
 }
 
 #[derive(Debug)]
 pub struct LoginScreen {
     pub username: String,
     pub password: String,
-    on_password: bool,
+    password_selected: bool,
+    user_list: Vec<User>,
 }
 
 impl LoginScreen {
-    pub fn new() -> LoginScreen {
+    pub fn new(user_list: Vec<User>) -> LoginScreen {
         LoginScreen { 
             username: String::new(),
             password: String::new(),
-            on_password: false,
+            password_selected: false,
+            user_list,
         }
     }
 }
@@ -31,17 +35,17 @@ impl LoginScreen {
 impl LoginScreen {
     pub fn handle_press_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char(char) => match self.on_password {
+            KeyCode::Char(char) => match self.password_selected {
                 false => self.username.push(char),
                 true => self.password.push(char),
             },
             // For some reason this does not work in cool-retro-term, something weird with stty and
             // command codes, it uses ^H instead of ^?
-            KeyCode::Backspace => match self.on_password {
+            KeyCode::Backspace => match self.password_selected {
                 false => { self.username.pop(); },
                 true => { self.password.pop(); },
             },
-            KeyCode::Tab => self.on_password = !self.on_password,
+            KeyCode::Tab => self.password_selected = !self.password_selected,
             _ => {},
         }
     }
@@ -49,7 +53,7 @@ impl LoginScreen {
     pub fn clear(&mut self) {
         self.username.clear();
         self.password.clear();
-        self.on_password = false;
+        self.password_selected = false;
     }
 }
 

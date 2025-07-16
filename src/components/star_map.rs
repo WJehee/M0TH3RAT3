@@ -37,7 +37,8 @@ impl Location {
     pub fn draw_current(&self, ctx: &mut Context) {
         ctx.print(
             self.x-(self.radius/2.0), self.y+(self.radius*2.0),
-            "You are here".green().bold()
+            "Jij bent hier".green().bold()
+            // "You are here".green().bold()
         );
     }
 }
@@ -73,15 +74,17 @@ impl StarMap {
             KeyCode::Right  => { self.selected_location = (self.selected_location + self.locations.len() + 1) % self.locations.len() },
             KeyCode::Enter  => { 
                 if let Some(key) = last_key_pressed {
-                    if key == key_event {
-                        self.warp_progress = last_press_time.elapsed().as_secs_f64() / Duration::from_secs(WARP_HOLD_DURATION).as_secs_f64();
-                        if self.warp_progress > 1.0 {
-                            self.warp_progress = 1.0;
+                    if self.current_location != self.selected_location {
+                        if key == key_event {
+                            self.warp_progress = last_press_time.elapsed().as_secs_f64() / Duration::from_secs(WARP_HOLD_DURATION).as_secs_f64();
+                            if self.warp_progress > 1.0 {
+                                self.warp_progress = 1.0;
+                            }
                         }
-                    }
-                    if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
-                        self.current_location = self.selected_location;
-                        self.warp_progress = 0.0;
+                        if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
+                            self.current_location = self.selected_location;
+                            self.warp_progress = 0.0;
+                        }
                     }
                 }
             }
@@ -108,22 +111,6 @@ impl Widget for &StarMap {
                         location.draw(ctx, None);
                     }
                 }
-                // Draw lines between locations
-                ctx.draw(&Line {
-                    x1: 50.0,
-                    y1: 80.0,
-                    x2: 30.0,
-                    y2: 20.0,
-                    color: Color::DarkGray,
-                });
-                ctx.draw(&Line {
-                    x1: 30.0,
-                    y1: 20.0,
-                    x2: 80.0,
-                    y2: 30.0,
-                    color: Color::DarkGray,
-                });
-                // TODO: highlight selected position on link and on location
             })
             .x_bounds([0.0, 100.0])
             .y_bounds([0.0, 100.0])

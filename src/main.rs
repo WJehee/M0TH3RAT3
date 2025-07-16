@@ -6,19 +6,32 @@ use color_eyre::{
     eyre,
 };
 
+use crate::storage::Storage;
+
 mod tui;
 mod app;
-mod components;
 mod storage;
 mod util;
+
 mod planet;
+mod components;
 
 fn main() -> Result<()> {
-    let path = std::env::args().nth(1);
-
+    let storage_path = std::env::args().nth(1);
     install_hooks()?;
+
+    let storage = match storage_path {
+        Some(path) => Storage::load(path).expect("storage path to be valid"),
+        None => match Storage::load(String::from("default.json")) {
+            Ok(storage) => storage,
+            Err(err) => {
+                println!("{:?}", err);
+                Storage::new(String::from("fallback.json"))
+            }
+        },
+    };
     let mut terminal = tui::init()?;
-    let _app_result = app::App::new(path).run(&mut terminal);
+    let _app_result = app::App::new(storage).run(&mut terminal);
     tui::restore()?;
     Ok(())
 }

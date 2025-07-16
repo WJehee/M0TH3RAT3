@@ -70,17 +70,14 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(storage_path: Option<String>) -> Self {
-        let storage = match storage_path {
-            Some(path) => Storage::load(path).expect("storage path to be valid"),
-            None => Storage::new(),
-        };
+    pub fn new(storage: Storage)-> Self {
         let mut effects: EffectManager<()> = EffectManager::default();
         // Init effect
         effects.add_effect(
             fx::prolong_start(0, fx::coalesce(3000))
         );
         
+        let users = storage.users.clone();
         Self {
             exit: false,
             last_key_pressed: None,
@@ -89,7 +86,7 @@ impl App {
             effects: effects,
 
             user: None,
-            loginscreen: LoginScreen::new(),
+            loginscreen: LoginScreen::new(users),
 
             menu: MenuState {
                 list_state: ListState::default().with_selected(Some(0)),
