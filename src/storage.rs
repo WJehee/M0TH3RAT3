@@ -3,12 +3,13 @@ use std::{fs::File, io::{Read, Write}};
 use serde::{Deserialize, Serialize};
 use color_eyre::Result;
 
-use crate::user::User;
+use crate::{objects::SolarSystem, user::User};
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Storage {
     pub path: String,
     pub users: Vec<User>,
+    pub map: Vec<SolarSystem>,
 }
 
 impl Storage {
@@ -16,6 +17,7 @@ impl Storage {
         Storage {
             path: path,
             users: Vec::new(),
+            map: Vec::new(),
         }
     }
 
@@ -36,6 +38,4 @@ impl Storage {
         Ok(())
     }
 }
-
-
 

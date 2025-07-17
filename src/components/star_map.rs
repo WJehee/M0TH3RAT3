@@ -4,7 +4,6 @@ use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canva
 
 use crate::util::WARP_HOLD_DURATION;
 
-
 #[derive(Debug)]
 struct Location {
     x: f64,

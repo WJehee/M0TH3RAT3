@@ -63,9 +63,8 @@ pub struct App {
     storage: Storage,
     effects: EffectManager<()>,
     user: User,
-
-    // Sub components
     menu: MenuState,
+
     starmap: StarMap,
     galaxy: GalacticMap,
     crew: CrewStatus,
@@ -134,7 +133,7 @@ impl App {
                     }
 
                     self.handle_press_event(key);
-                    match self.menu.selected {
+                    match self.menu.active {
                         MenuItem::GalacticMap => { self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time); }
                         MenuItem::StarMap => { self.starmap.handle_press_event(key, self.last_key_pressed, self.last_press_time); },
                         _ => {}

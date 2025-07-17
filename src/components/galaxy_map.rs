@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{
@@ -13,14 +13,9 @@ use crate::util::WARP_HOLD_DURATION;
 const MOVE_DISTANCE: f64 = 0.1;
 
 #[derive(Debug)]
-struct SolarSystem {
-    name: String,
-}
-
-#[derive(Debug)]
 pub struct GalacticMap {
     coords: Vec<(f64, f64)>,
-    systems: HashMap<(f64, f64), SolarSystem>,
+    // systems: HashMap<(f64, f64), SolarSystem>,
     current_pos: (f64, f64),
     selected_pos: (f64, f64),
     warp_progress: f64,
@@ -30,7 +25,7 @@ impl GalacticMap {
     pub fn new() -> Self {
         GalacticMap {
             coords: vec![(7.0, 8.0), (3.0, 2.0), (4.0, 5.0)],
-            systems: HashMap::new(),
+            // systems: HashMap::new(),
             current_pos: (0.0, 0.0),
             selected_pos: (0.0, 0.0),
             warp_progress: 0.0,
