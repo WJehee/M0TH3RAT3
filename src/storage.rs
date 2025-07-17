@@ -3,7 +3,7 @@ use std::{fs::File, io::{Read, Write}};
 use serde::{Deserialize, Serialize};
 use color_eyre::Result;
 
-use crate::components::login::User;
+use crate::login::User;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Storage {
@@ -17,15 +17,6 @@ impl Storage {
             path: path,
             users: Vec::new(),
         }
-    }
-
-    pub fn try_login(&self, username: &str, password: &str) -> Option<User> {
-        for user in &self.users {
-            if user.username == username && user.password == password {
-                return Some(user.clone());
-            }
-        }
-        None
     }
 
     pub fn load(storage_path: String) -> Result<Storage> {

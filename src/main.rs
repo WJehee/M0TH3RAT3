@@ -12,8 +12,7 @@ mod tui;
 mod app;
 mod storage;
 mod util;
-
-mod planet;
+mod login;
 mod components;
 
 fn main() -> Result<()> {
@@ -31,7 +30,10 @@ fn main() -> Result<()> {
         },
     };
     let mut terminal = tui::init()?;
-    let _app_result = app::App::new(storage).run(&mut terminal);
+
+    let user = login::LoginScreen::new(storage.users.clone()).run(&mut terminal)?;
+    let _app_result = app::App::new(storage, user).run(&mut terminal);
+
     tui::restore()?;
     Ok(())
 }

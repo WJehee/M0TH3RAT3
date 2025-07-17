@@ -13,7 +13,12 @@ use ratatui::{
 };
 use tachyonfx::{fx, EffectManager};
 
-use crate::{components::{crew::CrewStatus, galaxy_map::GalacticMap, login::{LoginScreen, User}, ship_status::ShipStatus, star_map::StarMap}, storage::Storage, tui, util};
+use crate::{
+    storage::Storage, 
+    login::{User},
+    components::{crew::CrewStatus, galaxy_map::GalacticMap, ship_status::ShipStatus, star_map::StarMap},
+    tui, util,
+};
 
 #[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive, strum::AsRefStr)]
 enum MenuItem {
@@ -57,12 +62,9 @@ pub struct App {
     last_press_time: Instant,
     storage: Storage,
     effects: EffectManager<()>,
+    user: User,
 
-    // Login requirements
-    user: Option<User>,
-    loginscreen: LoginScreen,
-
-    // Post login
+    // Sub components
     menu: MenuState,
     starmap: StarMap,
     galaxy: GalacticMap,
@@ -70,23 +72,20 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(storage: Storage)-> Self {
+    pub fn new(storage: Storage, user: User)-> Self {
         let mut effects: EffectManager<()> = EffectManager::default();
         // Init effect
         effects.add_effect(
             fx::prolong_start(0, fx::coalesce(3000))
         );
         
-        let users = storage.users.clone();
         Self {
             exit: false,
             last_key_pressed: None,
             last_press_time: Instant::now(),
-            storage: storage,
-            effects: effects,
-
-            user: None,
-            loginscreen: LoginScreen::new(users),
+            effects,
+            storage,
+            user,
 
             menu: MenuState {
                 list_state: ListState::default().with_selected(Some(0)),
@@ -153,19 +152,6 @@ impl App {
         match key_event.code {
             // Key's for all widgets
             KeyCode::Esc        => { self.exit = true; },
-            // Login screen handler
-            KeyCode::Enter if self.user == None => {
-                self.user = self.storage.try_login(&self.loginscreen.username, &self.loginscreen.password);
-                if self.user == None {
-                    // TODO: show an error popup given login has failed
-                    self.loginscreen.clear();
-                } else {
-                    // Successfull login, add new transition effect
-                    self.effects.add_effect(fx::coalesce(1000));
-                }
-            },
-            _ if self.user == None => self.loginscreen.handle_press_event(key_event),
-
             // Other
             KeyCode::Up         => { self.menu.select(-1); },
             KeyCode::Down       => { self.menu.select(1); },
@@ -198,9 +184,8 @@ impl App {
         let mut text = Text::from(util::TITLE_HEADER)
             .fg(Color::Green);
 
-        let user = self.user.clone().expect("we are past login at this point");
         text.extend(Line::from(
-            format!("Logged in as: {}", user.username.clone())
+            format!("Logged in as: {}", self.user.username.clone())
         ));
 
         Paragraph::new(text)
@@ -236,11 +221,6 @@ impl App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if self.user == None {
-            self.loginscreen.render(area, buf);
-            return;
-        }
-
         let [left, right] = Layout::horizontal([
             Constraint::Percentage(35),
             Constraint::Percentage(65),

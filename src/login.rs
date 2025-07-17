@@ -1,9 +1,12 @@
+use std::io;
+use std::time::Instant;
+
 use ratatui::{
-    crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{Block, Paragraph, Widget}
+    crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind}, prelude::*, widgets::{Block, Paragraph, Widget}
 };
 use serde::{Deserialize, Serialize};
 
-use crate::util;
+use crate::{tui, util};
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct User {
@@ -15,26 +18,61 @@ pub struct User {
 
 #[derive(Debug)]
 pub struct LoginScreen {
+    exit: bool,
     pub username: String,
     pub password: String,
     password_selected: bool,
     user_list: Vec<User>,
+    user: Option<User>,
 }
 
 impl LoginScreen {
     pub fn new(user_list: Vec<User>) -> LoginScreen {
         LoginScreen { 
+            exit: false,
             username: String::new(),
             password: String::new(),
             password_selected: false,
             user_list,
+            user: None,
         }
     }
 }
 
 impl LoginScreen {
-    pub fn handle_press_event(&mut self, key_event: KeyEvent) {
+    pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<User> {
+        let mut last_frame = Instant::now();
+
+        while !self.exit {
+            let elapsed = last_frame.elapsed();
+            last_frame = Instant::now();
+
+            terminal.draw(|frame| {
+                let area = frame.area();
+                frame.render_widget(&mut *self, area);
+                // self.effects.process_effects(elapsed.into(), frame.buffer_mut(), area);
+            })?;
+            self.handle_events()?;
+        }
+        // let copy = self.storage.clone();
+        // let _ = copy.save();
+        Ok(self.user.clone().expect("user to be set"))
+    }
+
+    fn handle_events(&mut self) -> io::Result<()> {
+        if event::poll(std::time::Duration::from_millis(50))? {
+            if let event::Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press {
+                    self.handle_press_event(key);
+                }
+            }
+        } 
+        Ok(())
+    }
+
+    fn handle_press_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
+            KeyCode::Esc        => { self.exit = true; },
             KeyCode::Char(char) => match self.password_selected {
                 false => self.username.push(char),
                 true => self.password.push(char),
@@ -46,18 +84,37 @@ impl LoginScreen {
                 true => { self.password.pop(); },
             },
             KeyCode::Tab => self.password_selected = !self.password_selected,
+            KeyCode::Enter => {
+                self.user = self.try_login(&self.username, &self.password);
+                if self.user == None {
+                    // TODO: show an error popup given login has failed
+                    self.clear();
+                } else {
+                    // Successfull login
+                    self.exit = true;
+                }
+            },
             _ => {},
         }
     }
 
-    pub fn clear(&mut self) {
+    fn try_login(&self, username: &str, password: &str) -> Option<User> {
+        for user in &self.user_list{
+            if user.username == username && user.password == password {
+                return Some(user.clone());
+            }
+        }
+        None
+    }
+
+    fn clear(&mut self) {
         self.username.clear();
         self.password.clear();
         self.password_selected = false;
     }
 }
 
-impl Widget for &LoginScreen {
+impl Widget for &mut LoginScreen {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut text = Text::from(util::TITLE_HEADER)
             .fg(Color::Green);
