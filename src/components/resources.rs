@@ -1,5 +1,4 @@
 use ratatui::{prelude::*, widgets::*};
-use symbols::border;
 
 #[derive(Debug)]
 pub struct MyGauge {
@@ -46,14 +45,6 @@ pub struct Resources {
 
 impl Widget for &Resources {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let block = Block::bordered()
-            .title_bottom(" Ship Status ".bold())
-            .title_alignment(Alignment::Center)
-            .border_set(border::THICK);
-
-        let inner = block.inner(area);
-        block.render(area, buf);
-
         let [crystals, fuel, components] = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -61,7 +52,7 @@ impl Widget for &Resources {
                 Constraint::Length(3),
                 Constraint::Length(3),
             ])
-            .areas(inner);
+            .areas(area);
 
         MyGauge::new("Kristallen", self.crystals as f64, 100.0, Color::Magenta).render(crystals, buf);
         MyGauge::new("Brandstof", self.fuel as f64, 100.0, Color::Red).render(fuel, buf);

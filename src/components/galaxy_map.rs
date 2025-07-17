@@ -15,20 +15,19 @@ const MOVE_DISTANCE: f64 = 0.1;
 #[derive(Debug)]
 pub struct GalacticMap {
     coords: Vec<(f64, f64)>,
-    current_pos: (f64, f64),
+    pub current_pos: (f64, f64),
     selected_pos: (f64, f64),
     warp_progress: f64,
     warped: bool,
 }
 
 impl GalacticMap {
-    pub fn new() -> Self {
+    pub fn new(pos: (f64, f64)) -> Self {
         GalacticMap {
             coords: vec![(7.0, 8.0), (3.0, 2.0), (4.0, 5.0)],
-            current_pos: (0.0, 0.0),
-            selected_pos: (0.0, 0.0),
+            current_pos: pos,
+            selected_pos: pos,
             warp_progress: 0.0,
-
             warped: false,
         }
     }

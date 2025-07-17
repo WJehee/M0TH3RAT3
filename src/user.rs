@@ -5,7 +5,7 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub pos_x: f64,
-    pub pox_y: f64,
+    pub pos_y: f64,
 
     // Resources,
     pub fuel: i32,

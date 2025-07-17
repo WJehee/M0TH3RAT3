@@ -1,4 +1,4 @@
-use std::{io, fmt, time::Instant};
+use std::{fmt, io, time::{Duration, Instant}};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -73,8 +73,8 @@ pub struct App {
     storage: Storage,
     effects: EffectManager<()>,
     pub user: User,
-    menu: MenuState,
 
+    menu: MenuState,
     starmap: StarMap,
     galaxy: GalacticMap,
     crew: CrewStatus,
@@ -87,7 +87,8 @@ impl App {
         effects.add_effect(
             fx::prolong_start(0, fx::coalesce(1000))
         );
-        
+       
+        let pos = (user.pos_x, user.pos_y);
         Self {
             exit: false,
             last_key_pressed: None,
@@ -102,7 +103,7 @@ impl App {
                 active: MenuItem::GalacticMap,
             },
             starmap: StarMap::new(),
-            galaxy: GalacticMap::new(),
+            galaxy: GalacticMap::new(pos),
             crew: CrewStatus{},
         }
     }
@@ -114,23 +115,23 @@ impl App {
             let elapsed = last_frame.elapsed();
             last_frame = Instant::now();
 
-            terminal.draw(|frame| {
-                self.render_frame(frame);
-                let area = frame.area();
-                self.effects.process_effects(elapsed.into(), frame.buffer_mut(), area);
-            })?;
-
+            terminal.draw(|frame| { self.render_frame(frame, elapsed); })?;
             self.handle_events()?;
 
         }
+        self.user.pos_x = self.galaxy.current_pos.0;
+        self.user.pos_y = self.galaxy.current_pos.1;
+
         let mut copy = self.storage.clone();
         copy.update_user(&self.user);
         let _ = copy.save();
         Ok(())
     }
 
-    fn render_frame(&mut self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+    fn render_frame(&mut self, frame: &mut Frame, elapsed: Duration) {
+        let area = frame.area();
+        frame.render_widget(&mut *self, area);
+        self.effects.process_effects(elapsed.into(), frame.buffer_mut(), area);
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -232,7 +233,6 @@ impl App {
     }
 }
 
-
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [left, right] = Layout::horizontal([
@@ -245,8 +245,8 @@ impl Widget for &mut App {
             .constraints([
                 Constraint::Percentage(40),
                 Constraint::Percentage(20),
-                Constraint::Percentage(20),
-                Constraint::Percentage(20),
+                Constraint::Percentage(25),
+                Constraint::Percentage(15),
             ])
             .areas(left);
 
