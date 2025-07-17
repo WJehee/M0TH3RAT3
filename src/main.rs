@@ -13,6 +13,7 @@ mod app;
 mod storage;
 mod util;
 mod login;
+mod user;
 mod components;
 
 fn main() -> Result<()> {

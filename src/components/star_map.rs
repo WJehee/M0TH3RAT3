@@ -1,8 +1,9 @@
 use std::time::Duration;
 
-use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context, Line}, Block, LineGauge}};
+use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context}, Block, Gauge}};
 
-const WARP_HOLD_DURATION: u64 = 1;
+use crate::util::WARP_HOLD_DURATION;
+
 
 #[derive(Debug)]
 struct Location {
@@ -116,15 +117,14 @@ impl Widget for &StarMap {
             .y_bounds([0.0, 100.0])
             .render(main, buf);
 
-        let line_gauge = LineGauge::default()
+        let line_gauge = Gauge::default()
             .block(Block::bordered().title("Warp"))
-            .filled_style(
+            .style(
                 Style::default()
                 .fg(Color::Yellow)
                 .bg(Color::Black)
                 .add_modifier(Modifier::ITALIC),
             )
-            .line_set(symbols::line::THICK)
             .ratio(self.warp_progress);
         line_gauge.render(bar, buf);
     }

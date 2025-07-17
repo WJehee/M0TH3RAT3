@@ -1,19 +1,20 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{
         canvas::{
             Canvas, Circle, Points, 
-        }, Widget
+        }, Block, Gauge, Widget
     }
 };
+
+use crate::util::WARP_HOLD_DURATION;
 
 const MOVE_DISTANCE: f64 = 0.1;
 
 #[derive(Debug)]
 struct SolarSystem {
     name: String,
-    
 }
 
 #[derive(Debug)]
@@ -22,6 +23,7 @@ pub struct GalacticMap {
     systems: HashMap<(f64, f64), SolarSystem>,
     current_pos: (f64, f64),
     selected_pos: (f64, f64),
+    warp_progress: f64,
 }
 
 impl GalacticMap {
@@ -31,15 +33,30 @@ impl GalacticMap {
             systems: HashMap::new(),
             current_pos: (0.0, 0.0),
             selected_pos: (0.0, 0.0),
+            warp_progress: 0.0,
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant) {
         match key_event.code {
             KeyCode::Char('a') => { self.selected_pos.0 -= MOVE_DISTANCE; },
             KeyCode::Char('d') => { self.selected_pos.0 += MOVE_DISTANCE; },
             KeyCode::Char('w') => { self.selected_pos.1 += MOVE_DISTANCE; },
             KeyCode::Char('s') => { self.selected_pos.1 -= MOVE_DISTANCE; },
+            KeyCode::Enter => {
+                if let Some(key) = last_key_pressed {
+                    if key == key_event {
+                        self.warp_progress = last_press_time.elapsed().as_secs_f64() / Duration::from_secs(WARP_HOLD_DURATION).as_secs_f64();
+                        if self.warp_progress > 1.0 {
+                            self.warp_progress = 1.0;
+                        }
+                    }
+                    if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
+                        self.current_pos = self.selected_pos;
+                        self.warp_progress = 0.0;
+                    }
+                }
+            },
             _ => {},
         }
     }
@@ -47,6 +64,11 @@ impl GalacticMap {
 
 impl Widget for &GalacticMap {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let [main, bar] = Layout::vertical([
+            Constraint::Percentage(95),
+            Constraint::Percentage(5),
+        ]).areas(area);
+
         Canvas::default()
             .paint(|ctx| {
                 ctx.draw(&Points {coords: &self.coords, color: Color::White});
@@ -67,8 +89,18 @@ impl Widget for &GalacticMap {
             })
             .x_bounds([-10.0, 10.0])
             .y_bounds([-10.0, 10.0])
-            .render(area, buf);
+            .render(main, buf);
 
+        let line_gauge = Gauge::default()
+            .block(Block::bordered().title("Warp"))
+            .style(
+                Style::default()
+                .fg(Color::Yellow)
+                .bg(Color::Black)
+                .add_modifier(Modifier::ITALIC),
+            )
+            .ratio(self.warp_progress);
+        line_gauge.render(bar, buf);
     }
 }
 

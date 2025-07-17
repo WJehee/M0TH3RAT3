@@ -3,7 +3,7 @@ use std::{fs::File, io::{Read, Write}};
 use serde::{Deserialize, Serialize};
 use color_eyre::Result;
 
-use crate::login::User;
+use crate::user::User;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Storage {

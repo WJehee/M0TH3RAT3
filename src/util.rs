@@ -22,6 +22,7 @@ pub const TITLE_HEADER: &str = r#"
 
 M0TH3R@3-OS
 "#;
+pub const WARP_HOLD_DURATION: u64 = 1;
 
 pub fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     let [area] = Layout::horizontal([horizontal])

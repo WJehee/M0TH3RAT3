@@ -5,14 +5,16 @@ use symbols::border;
 pub struct MyGauge {
     name: String,
     value: f64,
+    max_value: f64,
     color: Color,
 }
 
 impl MyGauge {
-    pub fn new(name: &str, value: f64, color: Color) -> Self {
+    pub fn new(name: &str, value: f64, max_value: f64, color: Color) -> Self {
         Self {
             name: name.to_string(),
             value,
+            max_value,
             color,
         }
     }
@@ -20,28 +22,18 @@ impl MyGauge {
 
 impl Widget for &MyGauge {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        //let gauge = Gauge::default()
-        //    .block(Block::bordered().title(self.name.clone()))
-        //    .gauge_style(
-        //        Style::default()
-        //        .fg(self.color)
-        //        .bg(Color::Black)
-        //        .add_modifier(Modifier::ITALIC),
-        //    )
-        //    .percent(self.value);
-        //gauge.render(area, buf);
-        
-        let line_gauge = LineGauge::default()
-            .block(Block::bordered().title(self.name.clone()))
-            .filled_style(
-                Style::default()
-                .fg(self.color)
-                .bg(Color::Black)
-                .add_modifier(Modifier::ITALIC),
-            )
-            .line_set(symbols::line::THICK)
-            .ratio(self.value);
-        line_gauge.render(area, buf);
+        let label = format!("{}/{}", self.value, self.max_value);
+        let gauge = Gauge::default()
+           .block(Block::bordered().title(self.name.clone()))
+           .gauge_style(
+               Style::default()
+               .fg(self.color)
+               .bg(Color::Black)
+               .add_modifier(Modifier::ITALIC),
+           )
+            .label(label)
+            .percent(((self.value / self.max_value) * 100.0) as u16);
+        gauge.render(area, buf);
     }
 }
 
@@ -58,17 +50,15 @@ impl Widget for &ShipStatus {
         let inner = block.inner(area);
         block.render(area, buf);
 
-        let [shields, power, fuel] = Layout::default()
+        let [crystals, fuel] = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
             ])
             .areas(inner);
 
-        MyGauge::new("Shields", 0.9, Color::Blue).render(shields, buf);
-        MyGauge::new("Power", 0.5, Color::Yellow).render(power, buf);
-        MyGauge::new("Fuel", 0.3, Color::Red).render(fuel, buf);
+        MyGauge::new("Kristallen", 10.0, 100.0, Color::Magenta).render(crystals, buf);
+        MyGauge::new("Brandstof", 80.0, 100.0, Color::Red).render(fuel, buf);
     }
 }

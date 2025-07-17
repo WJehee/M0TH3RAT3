@@ -4,19 +4,10 @@ use std::time::Instant;
 use ratatui::{
     crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind}, prelude::*, widgets::{Block, Paragraph, Widget}
 };
-use serde::{Deserialize, Serialize};
+use tachyonfx::{fx, EffectManager};
 
-use crate::{tui, util};
+use crate::{tui, user::User, util};
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-pub struct User {
-    pub username: String,
-    pub password: String,
-    pub pos_x: f64,
-    pub pox_y: f64,
-}
-
-#[derive(Debug)]
 pub struct LoginScreen {
     exit: bool,
     pub username: String,
@@ -24,10 +15,15 @@ pub struct LoginScreen {
     password_selected: bool,
     user_list: Vec<User>,
     user: Option<User>,
+    effects: EffectManager<()>,
 }
 
 impl LoginScreen {
     pub fn new(user_list: Vec<User>) -> LoginScreen {
+        let mut effects: EffectManager<()> = EffectManager::default();
+        effects.add_effect(
+            fx::prolong_start(0, fx::coalesce(3000))
+        );
         LoginScreen { 
             exit: false,
             username: String::new(),
@@ -35,6 +31,7 @@ impl LoginScreen {
             password_selected: false,
             user_list,
             user: None,
+            effects,
         }
     }
 }
@@ -50,12 +47,10 @@ impl LoginScreen {
             terminal.draw(|frame| {
                 let area = frame.area();
                 frame.render_widget(&mut *self, area);
-                // self.effects.process_effects(elapsed.into(), frame.buffer_mut(), area);
+                self.effects.process_effects(elapsed.into(), frame.buffer_mut(), area);
             })?;
             self.handle_events()?;
         }
-        // let copy = self.storage.clone();
-        // let _ = copy.save();
         Ok(self.user.clone().expect("user to be set"))
     }
 

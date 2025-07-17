@@ -15,7 +15,7 @@ use tachyonfx::{fx, EffectManager};
 
 use crate::{
     storage::Storage, 
-    login::{User},
+    user::{User},
     components::{crew::CrewStatus, galaxy_map::GalacticMap, ship_status::ShipStatus, star_map::StarMap},
     tui, util,
 };
@@ -73,10 +73,10 @@ pub struct App {
 
 impl App {
     pub fn new(storage: Storage, user: User)-> Self {
-        let mut effects: EffectManager<()> = EffectManager::default();
         // Init effect
+        let mut effects: EffectManager<()> = EffectManager::default();
         effects.add_effect(
-            fx::prolong_start(0, fx::coalesce(3000))
+            fx::prolong_start(0, fx::coalesce(1000))
         );
         
         Self {
@@ -135,7 +135,7 @@ impl App {
 
                     self.handle_press_event(key);
                     match self.menu.selected {
-                        MenuItem::GalacticMap => { self.galaxy.handle_press_event(key); }
+                        MenuItem::GalacticMap => { self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time); }
                         MenuItem::StarMap => { self.starmap.handle_press_event(key, self.last_key_pressed, self.last_press_time); },
                         _ => {}
                     }
