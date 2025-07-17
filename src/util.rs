@@ -1,5 +1,6 @@
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 
+pub const WARP_HOLD_DURATION: u64 = 1;
 pub const TITLE_HEADER: &str = r#"
      _                      _______                      _      
   _dMMMb._              .adOOOOOOOOOba.              _,dMMMb_   
@@ -22,7 +23,12 @@ pub const TITLE_HEADER: &str = r#"
 
 M0TH3R@3-OS
 "#;
-pub const WARP_HOLD_DURATION: u64 = 1;
+
+pub struct ItemDiff {
+    pub crystals: i32,
+    pub fuel: i32,
+    pub components: i32,
+}
 
 pub fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     let [area] = Layout::horizontal([horizontal])

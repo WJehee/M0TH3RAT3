@@ -39,9 +39,9 @@ impl Widget for &MyGauge {
 
 #[derive(Default)]
 pub struct Resources {
-    pub crystals: u32,
-    pub fuel: u32,
-    pub components: u32,
+    pub crystals: i32,
+    pub fuel: i32,
+    pub components: i32,
 }
 
 impl Widget for &Resources {

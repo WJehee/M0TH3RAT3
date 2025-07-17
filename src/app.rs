@@ -72,7 +72,7 @@ pub struct App {
     last_press_time: Instant,
     storage: Storage,
     effects: EffectManager<()>,
-    user: User,
+    pub user: User,
     menu: MenuState,
 
     starmap: StarMap,
@@ -123,7 +123,8 @@ impl App {
             self.handle_events()?;
 
         }
-        let copy = self.storage.clone();
+        let mut copy = self.storage.clone();
+        copy.update_user(&self.user);
         let _ = copy.save();
         Ok(())
     }
@@ -144,7 +145,13 @@ impl App {
 
                     self.handle_press_event(key);
                     match self.menu.active {
-                        MenuItem::GalacticMap => { self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time); }
+                        MenuItem::GalacticMap => { 
+                            if let Some(diff) = self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time) {
+                                self.user.crystals += diff.crystals;
+                                self.user.fuel += diff.fuel;
+                                self.storage.components += diff.components;
+                            }
+                        }
                         MenuItem::StarMap => { self.starmap.handle_press_event(key, self.last_key_pressed, self.last_press_time); },
                         _ => {}
                     }
@@ -166,7 +173,6 @@ impl App {
             KeyCode::Down       => { self.menu.select(1); },
             KeyCode::Enter      => { 
                 self.menu.activate();
-
                 // TODO: apply the effect only to the submodule / widget in the screen
                 // self.effects.add_effect(fx::coalesce(1000));
             },
@@ -249,7 +255,7 @@ impl Widget for &mut App {
         Resources {
             crystals: self.user.crystals,
             fuel: self.user.fuel,
-            components: 0,
+            components: self.storage.components,
         }.render(resources, buf);
 
         let block = Block::bordered()

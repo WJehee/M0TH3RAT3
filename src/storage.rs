@@ -10,6 +10,7 @@ pub struct Storage {
     pub path: String,
     pub users: Vec<User>,
     pub map: Vec<SolarSystem>,
+    pub components: i32,
 }
 
 impl Storage {
@@ -18,6 +19,7 @@ impl Storage {
             path: path,
             users: Vec::new(),
             map: Vec::new(),
+            components: 0,
         }
     }
 
@@ -36,6 +38,14 @@ impl Storage {
 
         file.write_all(&serde_json::to_vec_pretty(&self)?)?;
         Ok(())
+    }
+
+    pub fn update_user(&mut self, user: &User) {
+        for u in self.users.iter_mut() {
+            if u.username == user.username {
+                *u = user.clone();
+            }
+        }
     }
 }
 

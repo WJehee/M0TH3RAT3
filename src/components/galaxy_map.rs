@@ -8,7 +8,7 @@ use ratatui::{
     }
 };
 
-use crate::util::WARP_HOLD_DURATION;
+use crate::util::{ItemDiff, WARP_HOLD_DURATION};
 
 const MOVE_DISTANCE: f64 = 0.1;
 
@@ -18,6 +18,7 @@ pub struct GalacticMap {
     current_pos: (f64, f64),
     selected_pos: (f64, f64),
     warp_progress: f64,
+    warped: bool,
 }
 
 impl GalacticMap {
@@ -27,10 +28,15 @@ impl GalacticMap {
             current_pos: (0.0, 0.0),
             selected_pos: (0.0, 0.0),
             warp_progress: 0.0,
+
+            warped: false,
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant) {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant) -> Option<ItemDiff> {
+        if key_event.code != KeyCode::Enter {
+            self.warped = false;
+        }
         match key_event.code {
             KeyCode::Char('a') => { self.selected_pos.0 -= MOVE_DISTANCE; },
             KeyCode::Char('d') => { self.selected_pos.0 += MOVE_DISTANCE; },
@@ -45,13 +51,24 @@ impl GalacticMap {
                         }
                     }
                     if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
-                        self.current_pos = self.selected_pos;
                         self.warp_progress = 0.0;
+                       
+                        // Stop draining fuel after 1 time
+                        if !self.warped {
+                            self.warped = true;
+                            self.current_pos = self.selected_pos;
+                            return Some(ItemDiff {
+                                crystals: 0,
+                                fuel: -1,
+                                components: 0,
+                            })
+                        }
                     }
                 }
             },
             _ => {},
-        }
+        };
+        None
     }
 }
 
@@ -88,9 +105,9 @@ impl Widget for &GalacticMap {
             .block(Block::bordered().title("Warp"))
             .style(
                 Style::default()
-                .fg(Color::Yellow)
-                .bg(Color::Black)
-                .add_modifier(Modifier::ITALIC),
+                    .fg(Color::Yellow)
+                    .bg(Color::Black)
+                    .add_modifier(Modifier::ITALIC),
             )
             .ratio(self.warp_progress);
         line_gauge.render(bar, buf);

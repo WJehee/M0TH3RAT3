@@ -8,6 +8,6 @@ pub struct User {
     pub pox_y: f64,
 
     // Resources,
-    pub fuel: u32,
-    pub crystals: u32,
+    pub fuel: i32,
+    pub crystals: i32,
 }
