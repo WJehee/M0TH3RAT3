@@ -1,4 +1,4 @@
-use std::{io, time::Instant};
+use std::{io, fmt, time::Instant};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -16,16 +16,26 @@ use tachyonfx::{fx, EffectManager};
 use crate::{
     storage::Storage, 
     user::{User},
-    components::{crew::CrewStatus, galaxy_map::GalacticMap, ship_status::ShipStatus, star_map::StarMap},
+    components::{crew::CrewStatus, galaxy_map::GalacticMap, resources::Resources, star_map::StarMap},
     tui, util,
 };
 
-#[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive, strum::AsRefStr)]
+#[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive)]
 enum MenuItem {
     GalacticMap = 0,
     StarMap,
     Crew,
-    Info,
+}
+
+impl fmt::Display for MenuItem {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let res = match self {
+            MenuItem::GalacticMap => "Sterren kaart",
+            MenuItem::StarMap => "Zonnestelsels",
+            MenuItem::Crew => "Crew",
+        };
+        write!(f, "{}", res)
+    }
 }
 
 #[derive(Debug)]
@@ -41,7 +51,7 @@ impl MenuState {
         let next = current + offset;
         if next == -1 { 
             // Set to last item in the list
-            self.selected = MenuItem::Info
+            self.selected = MenuItem::Crew
         } else {
             self.selected = match FromPrimitive::from_i8(next) {
                 Some(d2) => d2,
@@ -201,10 +211,9 @@ impl App {
         ]).areas(area);
 
         let menu = List::new([
-            Line::from(MenuItem::GalacticMap.as_ref()).alignment(Alignment::Center),
-            Line::from(MenuItem::StarMap.as_ref()).alignment(Alignment::Center),
-            Line::from(MenuItem::Crew.as_ref()).alignment(Alignment::Center),
-            Line::from(MenuItem::Info.as_ref()).alignment(Alignment::Center),
+            Line::from(MenuItem::GalacticMap.to_string()).alignment(Alignment::Center),
+            Line::from(MenuItem::StarMap.to_string()).alignment(Alignment::Center),
+            Line::from(MenuItem::Crew.to_string()).alignment(Alignment::Center),
         ])
             .style(Style::default().fg(Color::White))
             .highlight_style(Style::default()
@@ -225,21 +234,26 @@ impl Widget for &mut App {
             Constraint::Percentage(65),
         ]).areas(area);
 
-        let [title, list, ship_status] = Layout::default()
+        let [title, list, status, resources] = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage(40),
-                Constraint::Percentage(25),
-                Constraint::Percentage(35),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
             ])
             .areas(left);
 
         self.render_title(title, buf);
         self.render_list(list, buf);
-        ShipStatus.render(ship_status, buf);
+        Resources {
+            crystals: self.user.crystals,
+            fuel: self.user.fuel,
+            components: 0,
+        }.render(resources, buf);
 
         let block = Block::bordered()
-            .title(self.menu.active.as_ref().bold())
+            .title(self.menu.active.to_string().bold())
             .title_alignment(Alignment::Center)
             .border_set(border::THICK);
         let inner = block.inner(right);
@@ -249,7 +263,6 @@ impl Widget for &mut App {
             MenuItem::GalacticMap => { self.galaxy.render(inner, buf); }
             MenuItem::StarMap   => { self.starmap.render(inner, buf); },
             MenuItem::Crew      => { self.crew.render(inner, buf); },
-            MenuItem::Info      => {},
         }
     }
 }

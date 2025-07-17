@@ -38,9 +38,13 @@ impl Widget for &MyGauge {
 }
 
 #[derive(Default)]
-pub struct ShipStatus;
+pub struct Resources {
+    pub crystals: u32,
+    pub fuel: u32,
+    pub components: u32,
+}
 
-impl Widget for &ShipStatus {
+impl Widget for &Resources {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .title_bottom(" Ship Status ".bold())
@@ -50,15 +54,17 @@ impl Widget for &ShipStatus {
         let inner = block.inner(area);
         block.render(area, buf);
 
-        let [crystals, fuel] = Layout::default()
+        let [crystals, fuel, components] = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
             ])
             .areas(inner);
 
-        MyGauge::new("Kristallen", 10.0, 100.0, Color::Magenta).render(crystals, buf);
-        MyGauge::new("Brandstof", 80.0, 100.0, Color::Red).render(fuel, buf);
+        MyGauge::new("Kristallen", self.crystals as f64, 100.0, Color::Magenta).render(crystals, buf);
+        MyGauge::new("Brandstof", self.fuel as f64, 100.0, Color::Red).render(fuel, buf);
+        MyGauge::new("Componenten", self.components as f64, 16.0, Color::DarkGray).render(components, buf);
     }
 }

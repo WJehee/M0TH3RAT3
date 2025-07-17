@@ -10,12 +10,13 @@ struct Location {
     y: f64,
     radius: f64,
     color: Color,
+    name: String,
 }
 
 impl Location {
     pub fn new(x: f64, y: f64, radius: f64, color: Color) -> Self {
         Self {
-            x, y, radius, color,
+            x, y, radius, color, name: String::from("Test"),
         }
     }
     
