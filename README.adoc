@@ -1,8 +1,12 @@
 == M0TH3R@E
 
 Custom TUI for managing a ship for the https://www.tuesdayknightgames.com/pages/mothership-rpg[Mothership TTRPG].
-Cooked up with https://ratatui.rs/[Ratatui].
-It looks the coolest when using `cool-retro-term`.
+Cooked up with https://ratatui.rs/[Ratatui] and:
+
+* https://github.com/arkbig/throbber-widgets-tui[Throbber widgets tui]
+* https://github.com/junkdog/tachyonfx[Tachyonfx]
+
+It looks the best when using `cool-retro-term`.
 
 Partially inspired by: https://anodyneprintware.com/planets/[Matt Umland's rimspace planet generator].
 

@@ -12,7 +12,7 @@ use ratatui::{
     crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind},
 };
 use tachyonfx::{fx, EffectManager};
-use throbber_widgets_tui::{Throbber, ThrobberState};
+use throbber_widgets_tui::{ThrobberState};
 
 use crate::{
     storage::Storage, 
@@ -220,7 +220,7 @@ impl App {
             .fg(Color::Green);
 
         text.extend(Line::from(
-            format!("Logged in as: {}", self.user.username.clone())
+            format!("Ingelogd als: {}", self.user.username.clone())
         ));
 
         Paragraph::new(text)
@@ -279,14 +279,15 @@ impl Widget for &mut App {
         
         // TODO: render current planet stats
 
-        // Throbber
-        let full = throbber_widgets_tui::Throbber::default()
-            .label("No fuel...")
-            .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
-            .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
-            .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
-            .use_type(throbber_widgets_tui::WhichUse::Spin);
-        ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
+        if self.user.fuel == 0 {
+            let full = throbber_widgets_tui::Throbber::default()
+                .label("Geen brandstof...")
+                .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
+                .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
+                .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
+                .use_type(throbber_widgets_tui::WhichUse::Spin);
+            ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
+        }
 
         Resources {
             crystals: self.user.crystals,
