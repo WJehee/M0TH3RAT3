@@ -1,3 +1,4 @@
+use num_traits::abs;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 
 pub const WARP_HOLD_DURATION: u64 = 1;
@@ -37,3 +38,14 @@ pub fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect 
     let [area] = Layout::vertical([vertical]).flex(Flex::Center).areas(area);
     area
 }
+
+pub fn distance(pos1: (f64, f64), pos2: (f64, f64)) -> f64 {
+    let x_distance = abs(pos1.0 - pos2.0);
+    let y_distance = abs(pos1.1 - pos2.1);
+    ((x_distance * x_distance) + (y_distance * y_distance)).sqrt()
+}
+
+pub fn within_radius(pos1: (f64, f64), pos2: (f64, f64), radius: f64) -> bool {
+    distance(pos1, pos2) <= radius
+}
+

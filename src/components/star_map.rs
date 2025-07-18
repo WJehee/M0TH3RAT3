@@ -21,12 +21,16 @@ impl Location {
     }
     
     pub fn draw(&self, ctx: &mut Context, highlighted: Option<Color>) {
-        ctx.draw(&Circle {
-            x: self.x,
-            y: self.y,
-            radius: self.radius,
-            color: self.color,
-        });
+        let mut i = self.radius;
+        while i > 0.0 {
+            ctx.draw(&Circle {
+                x: self.x,
+                y: self.y,
+                radius: i,
+                color: self.color,
+            });
+            i -= 0.5;
+        }
         ctx.draw(&Circle {
             x: self.x,
             y: self.y,

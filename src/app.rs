@@ -12,6 +12,7 @@ use ratatui::{
     crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind},
 };
 use tachyonfx::{fx, EffectManager};
+use throbber_widgets_tui::{Throbber, ThrobberState};
 
 use crate::{
     storage::Storage, 
@@ -67,13 +68,18 @@ impl MenuState {
 }
 
 pub struct App {
+    // UI
     exit: bool,
     last_key_pressed: Option<event::KeyEvent>,
     last_press_time: Instant,
-    storage: Storage,
     effects: EffectManager<()>,
+    throbber_state: throbber_widgets_tui::ThrobberState,
+
+    // Data
+    storage: Storage,
     pub user: User,
 
+    // Sub components
     menu: MenuState,
     starmap: StarMap,
     galaxy: GalacticMap,
@@ -94,6 +100,8 @@ impl App {
             last_key_pressed: None,
             last_press_time: Instant::now(),
             effects,
+            throbber_state: ThrobberState::default(),
+
             storage,
             user,
 
@@ -110,9 +118,15 @@ impl App {
 
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
         let mut last_frame = Instant::now();
+        let mut last_tick = Instant::now();
+        let tick_rate = Duration::from_millis(200);
 
         while !self.exit {
             let elapsed = last_frame.elapsed();
+            if last_tick.elapsed() >= tick_rate {
+                self.on_tick();
+                last_tick = Instant::now();
+            }
             last_frame = Instant::now();
 
             terminal.draw(|frame| { self.render_frame(frame, elapsed); })?;
@@ -126,6 +140,10 @@ impl App {
         copy.update_user(&self.user);
         let _ = copy.save();
         Ok(())
+    }
+
+    fn on_tick(&mut self) {
+        self.throbber_state.calc_next();
     }
 
     fn render_frame(&mut self, frame: &mut Frame, elapsed: Duration) {
@@ -147,7 +165,7 @@ impl App {
                     self.handle_press_event(key);
                     match self.menu.active {
                         MenuItem::GalacticMap => { 
-                            if let Some(diff) = self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time) {
+                            if let Some(diff) = self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time, self.user.fuel > 0) {
                                 self.user.crystals += diff.crystals;
                                 self.user.fuel += diff.fuel;
                                 self.storage.components += diff.components;
@@ -174,6 +192,7 @@ impl App {
             KeyCode::Down       => { self.menu.select(1); },
             KeyCode::Enter      => { 
                 self.menu.activate();
+
                 // TODO: apply the effect only to the submodule / widget in the screen
                 // self.effects.add_effect(fx::coalesce(1000));
             },
@@ -217,8 +236,13 @@ impl App {
             Constraint::Percentage(25),
         ]).areas(area);
 
+        let gmap = match self.user.fuel > 0 {
+            true =>  Line::from(MenuItem::GalacticMap.to_string()),
+            false =>  Line::from(MenuItem::GalacticMap.to_string()).crossed_out(),
+        };
+
         let menu = List::new([
-            Line::from(MenuItem::GalacticMap.to_string()).alignment(Alignment::Center),
+            gmap.alignment(Alignment::Center),
             Line::from(MenuItem::StarMap.to_string()).alignment(Alignment::Center),
             Line::from(MenuItem::Crew.to_string()).alignment(Alignment::Center),
         ])
@@ -252,12 +276,25 @@ impl Widget for &mut App {
 
         self.render_title(title, buf);
         self.render_list(list, buf);
+        
+        // TODO: render current planet stats
+
+        // Throbber
+        let full = throbber_widgets_tui::Throbber::default()
+            .label("No fuel...")
+            .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
+            .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
+            .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
+            .use_type(throbber_widgets_tui::WhichUse::Spin);
+        ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
+
         Resources {
             crystals: self.user.crystals,
             fuel: self.user.fuel,
             components: self.storage.components,
         }.render(resources, buf);
 
+        // Main widget
         let block = Block::bordered()
             .title(self.menu.active.to_string().bold())
             .title_alignment(Alignment::Center)
