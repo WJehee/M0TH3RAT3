@@ -1,6 +1,8 @@
 use num_traits::abs;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 
+use crate::objects::SolarSystem;
+
 pub const WARP_HOLD_DURATION: u64 = 1;
 pub const TITLE_HEADER: &str = r#"
      _                      _______                      _      
@@ -24,6 +26,11 @@ pub const TITLE_HEADER: &str = r#"
 
 M0TH3R@3-OS
 "#;
+
+pub enum Event {
+    Item(ItemDiff),
+    NewSystem(Option<SolarSystem>),
+}
 
 pub struct ItemDiff {
     pub crystals: i32,

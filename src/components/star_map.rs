@@ -5,7 +5,7 @@ use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canva
 use crate::util::WARP_HOLD_DURATION;
 
 #[derive(Debug)]
-struct Location {
+pub struct Location {
     x: f64,
     y: f64,
     radius: f64,
@@ -57,14 +57,7 @@ pub struct StarMap {
 }
 
 impl StarMap {
-    pub fn new() -> Self {
-        let mut locations = Vec::new();
-        let p1 = Location::new(50.0, 80.0, 5.0, Color::Magenta);
-        let p2 = Location::new(30.0, 20.0, 8.0, Color::Red);
-        let p3 = Location::new(80.0, 30.0, 3.0, Color::LightGreen);
-        locations.push(p1);
-        locations.push(p2);
-        locations.push(p3);
+    pub fn new(locations: Vec<Location>) -> Self {
         StarMap { 
             locations,
             selected_location: 0,

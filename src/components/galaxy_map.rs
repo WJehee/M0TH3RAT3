@@ -3,19 +3,20 @@ use std::time::Duration;
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{
         canvas::{
-            Canvas, Circle, Points, 
+            Canvas, Circle, Rectangle,
         }, Block, Gauge, Widget
     }
 };
 
-use crate::util::{within_radius, ItemDiff, WARP_HOLD_DURATION};
+use crate::{objects::SolarSystem, util::{within_radius, Event, ItemDiff, WARP_HOLD_DURATION}};
 
 const MOVE_DISTANCE: f64 = 0.1;
+const STAR_DISTANCE: f64 = MOVE_DISTANCE * 2.0;
 const WARP_DISTANCE: f64 = MOVE_DISTANCE * 20.0;
 
-#[derive(Debug)]
 pub struct GalacticMap {
-    coords: Vec<(f64, f64)>,
+    solar_systems: Vec<SolarSystem>,
+    pub current_system: Option<SolarSystem>,
     pub current_pos: (f64, f64),
     selected_pos: (f64, f64),
     warp_progress: f64,
@@ -23,9 +24,10 @@ pub struct GalacticMap {
 }
 
 impl GalacticMap {
-    pub fn new(pos: (f64, f64)) -> Self {
+    pub fn new(solar_systems: Vec<SolarSystem>, pos: (f64, f64)) -> Self {
         GalacticMap {
-            coords: vec![(7.0, 8.0), (3.0, 2.0), (4.0, 5.0)],
+            solar_systems,
+            current_system: None,
             current_pos: pos,
             selected_pos: pos,
             warp_progress: 0.0,
@@ -33,7 +35,7 @@ impl GalacticMap {
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant, can_warp: bool) -> Option<ItemDiff> {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant, can_warp: bool) -> Vec<Event> {
         if key_event.code != KeyCode::Enter {
             self.warped = false;
         }
@@ -58,11 +60,20 @@ impl GalacticMap {
                             if !self.warped {
                                 self.warped = true;
                                 self.current_pos = self.selected_pos;
-                                return Some(ItemDiff {
+                                let mut events = Vec::new();
+                                // Deplete fuel
+                                events.push(Event::Item(ItemDiff{
                                     crystals: 0,
                                     fuel: -1,
                                     components: 0,
-                                })
+                                }));
+
+                                if let Some(system) = self.check_for_systems() {
+                                    self.current_system = system.clone();
+                                    events.push(Event::NewSystem(system));
+                                }
+
+                                return events;
                             }
                         }
                     }
@@ -70,6 +81,26 @@ impl GalacticMap {
             },
             _ => {},
         };
+        Vec::new()
+    }
+
+    pub fn check_for_systems(&self) -> Option<Option<SolarSystem>> {
+        let mut none_in_range = true;
+        for system in &self.solar_systems {
+            if within_radius(self.current_pos, system.pos, STAR_DISTANCE) {
+                none_in_range = false;
+                if let Some(current) = &self.current_system {
+                    if system.name != current.name {
+                        return Some(Some(system.clone()));
+                    }
+                } else {
+                    return Some(Some(system.clone()));
+                }
+            }
+        }
+        if none_in_range {
+            return Some(None);
+        }
         None
     }
 }
@@ -90,12 +121,20 @@ impl Widget for &GalacticMap {
 
         Canvas::default()
             .paint(|ctx| {
-                ctx.draw(&Points {coords: &self.coords, color: Color::White});
+                for system in &self.solar_systems {
+                    ctx.draw(&Rectangle{
+                        x: system.pos.0,
+                        y: system.pos.1,
+                        width: MOVE_DISTANCE,
+                        height: MOVE_DISTANCE,
+                        color: Color::White,
+                    });
+                }
                 // Draw selected position
                 ctx.draw(&Circle{
                     x: self.selected_pos.0,
                     y: self.selected_pos.1,
-                    radius: MOVE_DISTANCE * 2.0,
+                    radius: STAR_DISTANCE,
                     color: Color::White,
                 });
                 // Draw possible warp radius

@@ -28,7 +28,7 @@ impl Storage {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
 
-        let result: Storage = serde_json::from_str(&buffer)?;
+        let result: Storage = serde_json::from_str(&buffer).expect("JSON to be valid");
 
         Ok(result)
     }
