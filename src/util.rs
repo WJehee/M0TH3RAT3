@@ -30,6 +30,7 @@ M0TH3R@3-OS
 pub enum Event {
     Item(ItemDiff),
     NewSystem(Option<SolarSystem>),
+    PlanetUpdate,
 }
 
 pub struct ItemDiff {

@@ -115,7 +115,7 @@ impl App {
         };
         if let Some(system) = result.galaxy.check_for_systems() {
             if let Some(s) = system { 
-                result.starmap = Some(s.to_star_map());
+                result.starmap = Some(solar_systems[s].to_star_map());
             } else {
                 result.starmap = None;
             }
@@ -145,6 +145,7 @@ impl App {
 
         let mut copy = self.storage.clone();
         copy.update_user(&self.user);
+        copy.map = self.galaxy.solar_systems.clone();
         let _ = copy.save();
         Ok(())
     }
@@ -170,169 +171,176 @@ impl App {
                     }
 
                     self.handle_press_event(key);
-                    match self.menu.active {
+                    let events = match self.menu.active {
                         MenuItem::GalacticMap => { 
-                            let events = self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time, self.user.fuel > 0);
-                            for event in events {
-                                match event {
-                                    Event::Item(diff) => {
-                                        self.user.crystals += diff.crystals;
-                                        self.user.fuel += diff.fuel;
-                                        self.storage.components += diff.components;
-                                    },
-                                    Event::NewSystem(Some(system)) => {
-                                        self.starmap = Some(system.to_star_map());
-                                    },
-                                    Event::NewSystem(None) => { self.starmap = None; },
-                                }
-                            }
-                        }
-                            MenuItem::StarMap => { 
-                                if let Some(map) = &mut self.starmap {
-                                    map.handle_press_event(key, self.last_key_pressed, self.last_press_time);
+                            self.galaxy.handle_press_event(key, self.last_key_pressed, self.last_press_time, self.user.fuel > 0)
+                        },
+                        MenuItem::StarMap => { 
+                            if let Some(map) = &mut self.starmap {
+                                map.handle_press_event(key, self.last_key_pressed, self.last_press_time, self.user.username.clone())
+                            } else { Vec::new() }
+                        },
+                        _ => { Vec::new() }
+                    };
+                    for event in events {
+                        match event {
+                            Event::Item(diff) => {
+                                self.user.crystals += diff.crystals;
+                                self.user.fuel += diff.fuel;
+                                self.storage.components += diff.components;
+                                // Earn 1 reputation per component
+                                self.user.reputation += diff.components;
+                            },
+                            Event::NewSystem(Some(system)) => {
+                                self.starmap = Some(system.to_star_map());
+                            },
+                            Event::NewSystem(None) => { self.starmap = None; },
+                            Event::PlanetUpdate => {
+                                if let Some(system) = self.galaxy.get_current_system_mut() {
+                                    system.planets = self.starmap.as_ref().expect("starmap just handled input").planets.clone();
                                 }
                             },
-                            _ => {}
                         }
                     }
-                }
-            } else {
-                // No key was pressed, reset 
-                self.last_key_pressed = None;
+                };       
             }
-            Ok(())
+        } else {
+            // No key was pressed, reset 
+            self.last_key_pressed = None;
         }
+        Ok(())
+    }
 
-        fn handle_press_event(&mut self, key_event: KeyEvent) {
-            match key_event.code {
-                // Key's for all widgets
-                KeyCode::Esc        => { self.exit = true; },
-                // Other
-                KeyCode::Up         => { self.menu.select(-1); },
-                KeyCode::Down       => { self.menu.select(1); },
-                KeyCode::Enter      => { 
-                    self.menu.activate();
+    fn handle_press_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            // Key's for all widgets
+            KeyCode::Esc        => { self.exit = true; },
+            // Other
+            KeyCode::Up         => { self.menu.select(-1); },
+            KeyCode::Down       => { self.menu.select(1); },
+            KeyCode::Enter      => { 
+                self.menu.activate();
 
-                    // TODO: apply the effect only to the submodule / widget in the screen
-                    // self.effects.add_effect(fx::coalesce(1000));
-                },
-                _ => {},
-            }
+                // TODO: apply the effect only to the submodule / widget in the screen
+                // self.effects.add_effect(fx::coalesce(1000));
+            },
+            _ => {},
         }
+    }
 
-        fn render_title(&mut self, area: Rect, buf: &mut Buffer) {
-            let instructions = Line::from(vec![
-                " Select ".into(),
-                "<Enter>".green().bold(),
-                " Move up ".into(),
-                "<Up>".green().bold(),
-                " Move down ".into(),
-                "<Down>".green().bold(),
-                " Quit ".into(),
-                "<Esc> ".green().bold(),
-            ]);
-            let block = Block::bordered()
-                .title_bottom(instructions)
-                .title_alignment(Alignment::Center)
-                .border_set(border::THICK);
+    fn render_title(&mut self, area: Rect, buf: &mut Buffer) {
+        let instructions = Line::from(vec![
+            " Select ".into(),
+            "<Enter>".green().bold(),
+            " Move up ".into(),
+            "<Up>".green().bold(),
+            " Move down ".into(),
+            "<Down>".green().bold(),
+            " Quit ".into(),
+            "<Esc> ".green().bold(),
+        ]);
+        let block = Block::bordered()
+            .title_bottom(instructions)
+            .title_alignment(Alignment::Center)
+            .border_set(border::THICK);
 
-            let mut text = Text::from(util::TITLE_HEADER)
-                .fg(Color::Green);
+        let mut text = Text::from(util::TITLE_HEADER)
+            .fg(Color::Green);
 
-            text.extend(Line::from(
-                format!("Ingelogd als: {}", self.user.username.clone())
-            ));
+        text.extend(Line::from(
+            format!("Ingelogd als: {}", self.user.username.clone())
+        ));
 
-            Paragraph::new(text)
-                .centered()
-                .block(block)
-                .render(area, buf);
-        }
+        Paragraph::new(text)
+            .centered()
+            .block(block)
+            .render(area, buf);
+    }
 
-        fn render_list(&mut self, area: Rect, buf: &mut Buffer) {
-            let [_padding_top, menu_pos, _padding_bottom] = Layout::vertical([
-                Constraint::Percentage(25),
-                Constraint::Percentage(50),
-                Constraint::Percentage(25),
-            ]).areas(area);
+    fn render_list(&mut self, area: Rect, buf: &mut Buffer) {
+        let [_padding_top, menu_pos, _padding_bottom] = Layout::vertical([
+            Constraint::Percentage(25),
+            Constraint::Percentage(50),
+            Constraint::Percentage(25),
+        ]).areas(area);
 
-            let gmap = match self.user.fuel > 0 {
-                true =>  Line::from(MenuItem::GalacticMap.to_string()),
-                false =>  Line::from(MenuItem::GalacticMap.to_string()).crossed_out(),
-            };
+        let gmap = match self.user.fuel > 0 {
+            true =>  Line::from(MenuItem::GalacticMap.to_string()),
+            false =>  Line::from(MenuItem::GalacticMap.to_string()).crossed_out(),
+        };
 
-            let menu = List::new([
-                gmap.alignment(Alignment::Center),
-                Line::from(MenuItem::StarMap.to_string()).alignment(Alignment::Center),
-                Line::from(MenuItem::Crew.to_string()).alignment(Alignment::Center),
+        let menu = List::new([
+            gmap.alignment(Alignment::Center),
+            Line::from(MenuItem::StarMap.to_string()).alignment(Alignment::Center),
+            Line::from(MenuItem::Crew.to_string()).alignment(Alignment::Center),
+        ])
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default()
+                .bold()
+                .fg(Color::Green)
+            )
+            .repeat_highlight_symbol(true);
+
+        ratatui::prelude::StatefulWidget::render(menu, menu_pos, buf, &mut self.menu.list_state);
+    }
+}
+
+impl Widget for &mut App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let [left, right] = Layout::horizontal([
+            Constraint::Percentage(35),
+            Constraint::Percentage(65),
+        ]).areas(area);
+
+        let [title, list, status, resources] = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
             ])
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default()
-                    .bold()
-                    .fg(Color::Green)
-                )
-                .repeat_highlight_symbol(true);
+            .areas(left);
 
-            ratatui::prelude::StatefulWidget::render(menu, menu_pos, buf, &mut self.menu.list_state);
+        self.render_title(title, buf);
+        self.render_list(list, buf);
+
+        // TODO: render current planet stats
+
+        if self.user.fuel == 0 {
+            let full = throbber_widgets_tui::Throbber::default()
+                .label("Geen brandstof...")
+                .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
+                .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
+                .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
+                .use_type(throbber_widgets_tui::WhichUse::Spin);
+            ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
+        }
+
+        Resources {
+            crystals: self.user.crystals,
+            fuel: self.user.fuel,
+            reputation: self.user.reputation,
+            components: self.storage.components,
+        }.render(resources, buf);
+
+        // Main widget
+        let block = Block::bordered()
+            .title(self.menu.active.to_string().bold())
+            .title_alignment(Alignment::Center)
+            .border_set(border::THICK);
+        let inner = block.inner(right);
+        block.render(right, buf);
+
+        match self.menu.active {
+            MenuItem::GalacticMap => { self.galaxy.render(inner, buf); }
+            MenuItem::StarMap   => { 
+                if let Some(map) = &self.starmap {
+                    map.render(inner, buf);
+                }
+            },
+            MenuItem::Crew      => { self.crew.render(inner, buf); },
         }
     }
-
-    impl Widget for &mut App {
-        fn render(self, area: Rect, buf: &mut Buffer) {
-            let [left, right] = Layout::horizontal([
-                Constraint::Percentage(35),
-                Constraint::Percentage(65),
-            ]).areas(area);
-
-            let [title, list, status, resources] = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Percentage(40),
-                    Constraint::Percentage(20),
-                    Constraint::Percentage(20),
-                    Constraint::Percentage(20),
-                ])
-                .areas(left);
-
-            self.render_title(title, buf);
-            self.render_list(list, buf);
-
-            // TODO: render current planet stats
-
-            if self.user.fuel == 0 {
-                let full = throbber_widgets_tui::Throbber::default()
-                    .label("Geen brandstof...")
-                    .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
-                    .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
-                    .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
-                    .use_type(throbber_widgets_tui::WhichUse::Spin);
-                ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
-            }
-
-            Resources {
-                crystals: self.user.crystals,
-                fuel: self.user.fuel,
-                reputation: self.user.reputation,
-                components: self.storage.components,
-            }.render(resources, buf);
-
-            // Main widget
-            let block = Block::bordered()
-                .title(self.menu.active.to_string().bold())
-                .title_alignment(Alignment::Center)
-                .border_set(border::THICK);
-            let inner = block.inner(right);
-            block.render(right, buf);
-
-            match self.menu.active {
-                MenuItem::GalacticMap => { self.galaxy.render(inner, buf); }
-                MenuItem::StarMap   => { 
-                    if let Some(map) = &self.starmap {
-                        map.render(inner, buf);
-                    }
-                },
-                MenuItem::Crew      => { self.crew.render(inner, buf); },
-            }
-        }
-    }
+}
 

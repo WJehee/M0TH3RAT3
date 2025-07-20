@@ -15,8 +15,8 @@ const STAR_DISTANCE: f64 = MOVE_DISTANCE * 2.0;
 const WARP_DISTANCE: f64 = MOVE_DISTANCE * 20.0;
 
 pub struct GalacticMap {
-    solar_systems: Vec<SolarSystem>,
-    pub current_system: Option<SolarSystem>,
+    pub solar_systems: Vec<SolarSystem>,
+    pub current_system: Option<usize>,
     pub current_pos: (f64, f64),
     selected_pos: (f64, f64),
     warp_progress: f64,
@@ -32,6 +32,22 @@ impl GalacticMap {
             selected_pos: pos,
             warp_progress: 0.0,
             warped: false,
+        }
+    }
+
+    pub fn get_current_system(&self) -> Option<&SolarSystem> {
+        if let Some(current) = self.current_system {
+            Some(&self.solar_systems[current])
+        } else {
+            None
+        }
+    }
+
+    pub fn get_current_system_mut(&mut self) -> Option<&mut SolarSystem> {
+        if let Some(current) = self.current_system {
+            Some(&mut self.solar_systems[current])
+        } else {
+            None
         }
     }
 
@@ -68,11 +84,17 @@ impl GalacticMap {
                                     components: 0,
                                 }));
 
-                                if let Some(system) = self.check_for_systems() {
-                                    self.current_system = system.clone();
-                                    events.push(Event::NewSystem(system));
+                                match self.check_for_systems() {
+                                    Some(Some(i)) => {
+                                        self.current_system = Some(i);
+                                        events.push(Event::NewSystem(Some(self.solar_systems[i].clone())));
+                                    },
+                                    Some(None) => {
+                                        self.current_system = None;
+                                        events.push(Event::NewSystem(None));
+                                    },
+                                    None => {}
                                 }
-
                                 return events;
                             }
                         }
@@ -84,17 +106,17 @@ impl GalacticMap {
         Vec::new()
     }
 
-    pub fn check_for_systems(&self) -> Option<Option<SolarSystem>> {
+    pub fn check_for_systems(&mut self) -> Option<Option<usize>> {
         let mut none_in_range = true;
-        for system in &self.solar_systems {
+        for (i, system) in self.solar_systems.iter().enumerate() {
             if within_radius(self.current_pos, system.pos, STAR_DISTANCE) {
                 none_in_range = false;
-                if let Some(current) = &self.current_system {
+                if let Some(current) = self.get_current_system() {
                     if system.name != current.name {
-                        return Some(Some(system.clone()));
+                        return Some(Some(i));
                     }
                 } else {
-                    return Some(Some(system.clone()));
+                    return Some(Some(i));
                 }
             }
         }

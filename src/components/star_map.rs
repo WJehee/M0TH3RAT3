@@ -1,75 +1,30 @@
 use std::time::Duration;
 
-use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas, Circle, Context}, Block, Gauge}};
+use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas}, Block, Gauge}};
 
-use crate::util::WARP_HOLD_DURATION;
+use crate::{objects::Planet, util::{Event, WARP_HOLD_DURATION}};
 
-#[derive(Debug)]
-pub struct Location {
-    x: f64,
-    y: f64,
-    radius: f64,
-    color: Color,
-    name: String,
-}
-
-impl Location {
-    pub fn new(x: f64, y: f64, radius: f64, color: Color) -> Self {
-        Self {
-            x, y, radius, color, name: String::from("Test"),
-        }
-    }
-    
-    pub fn draw(&self, ctx: &mut Context, highlighted: Option<Color>) {
-        let mut i = self.radius;
-        while i > 0.0 {
-            ctx.draw(&Circle {
-                x: self.x,
-                y: self.y,
-                radius: i,
-                color: self.color,
-            });
-            i -= 0.5;
-        }
-        ctx.draw(&Circle {
-            x: self.x,
-            y: self.y,
-            radius: self.radius * 1.7,
-            color: highlighted.unwrap_or(Color::DarkGray),
-        });
-    }
-
-    pub fn draw_current(&self, ctx: &mut Context) {
-        ctx.print(
-            self.x-(self.radius/2.0), self.y+(self.radius*2.0),
-            "Jij bent hier".green().bold()
-            // "You are here".green().bold()
-        );
-    }
-}
-
-#[derive(Debug)]
 pub struct StarMap {
-    locations: Vec<Location>,
+    pub planets: Vec<Planet>,
     selected_location: usize,
     current_location: usize,
     warp_progress: f64,
 }
 
 impl StarMap {
-    pub fn new(locations: Vec<Location>) -> Self {
+    pub fn new(locations: Vec<Planet>) -> Self {
         StarMap { 
-            locations,
+            planets: locations,
             selected_location: 0,
             current_location: 0,
             warp_progress: 0.0,
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant) {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant, username: String) -> Vec<Event> {
         match key_event.code {
-            KeyCode::Left   => { self.selected_location = (self.selected_location + self.locations.len() - 1) % self.locations.len() },
-            KeyCode::Right  => { self.selected_location = (self.selected_location + self.locations.len() + 1) % self.locations.len() },
+            KeyCode::Left   => { self.selected_location = (self.selected_location + self.planets.len() - 1) % self.planets.len() },
+            KeyCode::Right  => { self.selected_location = (self.selected_location + self.planets.len() + 1) % self.planets.len() },
             KeyCode::Enter  => { 
                 if let Some(key) = last_key_pressed {
                     if self.current_location != self.selected_location {
@@ -85,9 +40,14 @@ impl StarMap {
                         }
                     }
                 }
-            }
+            },
+            KeyCode::Char('e') => {
+                // Explore planet
+                return self.planets[self.current_location].visit(username);
+            },
             _ => {},
         }
+        Vec::new()
     }
 }
 
@@ -101,7 +61,7 @@ impl Widget for &StarMap {
         Canvas::default()
             .paint(|ctx| {
                 // Draw each location
-                for (i, location) in self.locations.iter().enumerate() {
+                for (i, location) in self.planets.iter().enumerate() {
                     if i == self.current_location { location.draw_current(ctx); }
                     if i == self.selected_location {
                         location.draw(ctx, Some(Color::White));

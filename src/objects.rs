@@ -1,9 +1,9 @@
-use std::{fmt};
+use std::{collections::HashSet, fmt};
 
-use ratatui::style::Color;
+use ratatui::{prelude::*, style::Color, widgets::canvas::{Circle, Context}};
 use serde::{Deserialize, Serialize};
 
-use crate::components::star_map::{Location, StarMap};
+use crate::{components::star_map::StarMap, util::{Event, ItemDiff}};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct SolarSystem {
@@ -13,15 +13,8 @@ pub struct SolarSystem {
 }
 
 impl SolarSystem {
-    pub fn to_star_map(self) -> StarMap {
-        let mut locations = Vec::new();
-        let p1 = Location::new(50.0, 80.0, 5.0, Color::Magenta);
-        let p2 = Location::new(30.0, 20.0, 8.0, Color::Red);
-        let p3 = Location::new(80.0, 30.0, 3.0, Color::LightGreen);
-        locations.push(p1);
-        locations.push(p2);
-        locations.push(p3);
-        StarMap::new(locations)
+    pub fn to_star_map(&self) -> StarMap {
+        StarMap::new(self.planets.clone())
     }
 
     pub fn has_component(self) -> bool {
@@ -40,23 +33,78 @@ impl SolarSystem {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-struct Planet {
+pub struct Planet {
     // Visual traits
     name: String,
     x: f64,
     y: f64,
     radius: f64,
 
-    // Random info 
-    diameter_km: u32,
-    temp: i32,
-    gravity: f32,
-    hours_per_day: u32,
-    tags: Vec<PlanetTag>,
+    // TODO: Random info, show in popup
+    // diameter_km: u32,
+    // temp: i32,
+    // gravity: f32,
+    // hours_per_day: u32,
+    // tags: Vec<PlanetTag>,
 
     // Game related
     has_event: bool,
     has_component: bool,
+    crystals: i32,
+    fuel: i32,
+    visited_by: HashSet<String>,
+}
+
+impl Planet {
+    pub fn visit(&mut self, name: String) -> Vec<Event> {
+        self.visited_by.insert(name);
+        let mut events = Vec::new();
+        events.push(Event::PlanetUpdate);
+        if self.has_event {
+            self.has_event = false;
+            // TODO: trigger event
+        }
+        if self.has_component {
+            self.has_component = false;
+            events.push(Event::Item(ItemDiff{
+                crystals: 0,
+                fuel: 0,
+                components: 1,
+            }));
+        }
+        events
+    }
+
+    pub fn draw(&self, ctx: &mut Context, highlighted: Option<Color>) {
+        let mut i = self.radius;
+        while i > 0.0 {
+            ctx.draw(&Circle {
+                x: self.x,
+                y: self.y,
+                radius: i,
+                color: self.get_color(),
+            });
+            i -= 0.5;
+        }
+        ctx.draw(&Circle {
+            x: self.x,
+            y: self.y,
+            radius: self.radius * 1.7,
+            color: highlighted.unwrap_or(Color::DarkGray),
+        });
+    }
+
+    pub fn draw_current(&self, ctx: &mut Context) {
+        ctx.print(
+            self.x-(self.radius/2.0), self.y+(self.radius*2.0),
+            "Jij bent hier".green().bold()
+            // "You are here".green().bold()
+        );
+    }
+
+    fn get_color(&self) -> Color {
+        Color::Red
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone)]
