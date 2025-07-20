@@ -81,6 +81,7 @@ pub struct App {
     starmap: Option<StarMap>,
     galaxy: GalacticMap,
     crew: CrewStatus,
+    event: bool,
 }
 
 impl App {
@@ -112,14 +113,12 @@ impl App {
             starmap: None,
             galaxy: GalacticMap::new(solar_systems.clone(), pos),
             crew: CrewStatus{},
+            event: false,
         };
-        if let Some(system) = result.galaxy.check_for_systems() {
-            if let Some(s) = system { 
-                result.starmap = Some(solar_systems[s].to_star_map());
-            } else {
-                result.starmap = None;
-            }
-        }
+        result.galaxy.update_system();
+        if let Some(system) = result.galaxy.get_current_system() {
+            result.starmap = Some(system.to_star_map());
+        } 
         result
     }
 
@@ -200,6 +199,9 @@ impl App {
                                     system.planets = self.starmap.as_ref().expect("starmap just handled input").planets.clone();
                                 }
                             },
+                            Event::RandomEvent => {
+                                self.event = true;
+                            },
                         }
                     }
                 };       
@@ -224,6 +226,7 @@ impl App {
                 // TODO: apply the effect only to the submodule / widget in the screen
                 // self.effects.add_effect(fx::coalesce(1000));
             },
+            KeyCode::Char('q') => { self.event = false; }
             _ => {},
         }
     }
@@ -310,6 +313,16 @@ impl Widget for &mut App {
         if self.user.fuel == 0 {
             let full = throbber_widgets_tui::Throbber::default()
                 .label("Geen brandstof...")
+                .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
+                .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
+                .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
+                .use_type(throbber_widgets_tui::WhichUse::Spin);
+            ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
+        }
+
+        if self.event {
+            let full = throbber_widgets_tui::Throbber::default()
+                .label("RANDOM EVENT! ga naar de leiding!")
                 .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
                 .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
                 .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)

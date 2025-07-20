@@ -59,19 +59,23 @@ impl Planet {
     pub fn visit(&mut self, name: String) -> Vec<Event> {
         self.visited_by.insert(name);
         let mut events = Vec::new();
-        events.push(Event::PlanetUpdate);
+        let mut diff = ItemDiff {
+            crystals: self.crystals,
+            fuel: self.fuel,
+            components: 0,
+        };
+        self.crystals = 0;
+        self.fuel = 0;
         if self.has_event {
             self.has_event = false;
-            // TODO: trigger event
+            events.push(Event::RandomEvent);
         }
         if self.has_component {
             self.has_component = false;
-            events.push(Event::Item(ItemDiff{
-                crystals: 0,
-                fuel: 0,
-                components: 1,
-            }));
+            diff.components += 1;
         }
+        events.push(Event::Item(diff));
+        events.push(Event::PlanetUpdate);
         events
     }
 

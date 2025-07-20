@@ -106,7 +106,13 @@ impl GalacticMap {
         Vec::new()
     }
 
-    pub fn check_for_systems(&mut self) -> Option<Option<usize>> {
+    pub fn update_system(&mut self) {
+        if let Some(system) = self.check_for_systems() {
+            self.current_system = system;
+        }
+    }
+
+    pub fn check_for_systems(&self) -> Option<Option<usize>> {
         let mut none_in_range = true;
         for (i, system) in self.solar_systems.iter().enumerate() {
             if within_radius(self.current_pos, system.pos, STAR_DISTANCE) {

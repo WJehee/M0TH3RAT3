@@ -31,6 +31,7 @@ pub enum Event {
     Item(ItemDiff),
     NewSystem(Option<SolarSystem>),
     PlanetUpdate,
+    RandomEvent,
 }
 
 pub struct ItemDiff {

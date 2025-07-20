@@ -43,7 +43,8 @@ impl StarMap {
             },
             KeyCode::Char('e') => {
                 // Explore planet
-                return self.planets[self.current_location].visit(username);
+                let events = self.planets[self.current_location].visit(username);
+                return events;
             },
             _ => {},
         }
