@@ -40,14 +40,16 @@ impl Widget for &MyGauge {
 pub struct Resources {
     pub crystals: i32,
     pub fuel: i32,
+    pub reputation: i32,
     pub components: i32,
 }
 
 impl Widget for &Resources {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [crystals, fuel, components] = Layout::default()
+        let [crystals, fuel, reputation, components] = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
@@ -56,6 +58,7 @@ impl Widget for &Resources {
 
         MyGauge::new("Kristallen", self.crystals as f64, 100.0, Color::Magenta).render(crystals, buf);
         MyGauge::new("Brandstof", self.fuel as f64, 100.0, Color::Red).render(fuel, buf);
+        MyGauge::new("Reputatie", self.reputation as f64, 100.0, Color::Yellow).render(reputation, buf);
         MyGauge::new("Componenten", self.components as f64, 16.0, Color::DarkGray).render(components, buf);
     }
 }

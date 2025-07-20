@@ -80,7 +80,7 @@ impl LoginScreen {
             },
             KeyCode::Tab => self.password_selected = !self.password_selected,
             KeyCode::Enter => {
-                self.user = self.try_login(&self.username, &self.password);
+                self.user = self.try_login(self.username.clone(), self.password.clone());
                 if self.user == None {
                     // TODO: show an error popup given login has failed
                     self.clear();
@@ -93,8 +93,16 @@ impl LoginScreen {
         }
     }
 
-    fn try_login(&self, username: &str, password: &str) -> Option<User> {
-        for user in &self.user_list{
+    fn try_login(&mut self, username: String, password: String) -> Option<User> {
+        for user in self.user_list.iter_mut() {
+
+            if user.password == "" {
+                let parts: Vec<&str> = password.split("-").collect();
+                if parts[0] == user.password_start {
+                    user.password = password.clone();
+                }
+            }
+
             if user.username == username && user.password == password {
                 return Some(user.clone());
             }

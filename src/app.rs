@@ -289,8 +289,8 @@ impl App {
                 .constraints([
                     Constraint::Percentage(40),
                     Constraint::Percentage(20),
-                    Constraint::Percentage(25),
-                    Constraint::Percentage(15),
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
                 ])
                 .areas(left);
 
@@ -312,6 +312,7 @@ impl App {
             Resources {
                 crystals: self.user.crystals,
                 fuel: self.user.fuel,
+                reputation: self.user.reputation,
                 components: self.storage.components,
             }.render(resources, buf);
 
