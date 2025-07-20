@@ -17,15 +17,15 @@ impl SolarSystem {
         StarMap::new(self.planets.clone())
     }
 
-    pub fn has_component(self) -> bool {
-        for planet in self.planets {
+    pub fn has_component(&self) -> bool {
+        for planet in &self.planets {
             if planet.has_component { return true; }
         }
         false
     }
 
-    pub fn has_event(self) -> bool {
-        for planet in self.planets {
+    pub fn has_event(&self) -> bool {
+        for planet in &self.planets {
             if planet.has_event{ return true; }
         }
         false

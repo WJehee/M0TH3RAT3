@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     pub username: String,
     pub password_start: String,
+    pub password_attempts: u8,
+    pub password_attempts_max: u8,
     pub password: String,
     pub pos_x: f64,
     pub pos_y: f64,

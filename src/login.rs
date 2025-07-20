@@ -99,7 +99,11 @@ impl LoginScreen {
             if user.password == "" {
                 let parts: Vec<&str> = password.split("-").collect();
                 if parts[0] == user.password_start {
-                    user.password = password.clone();
+                    if user.password_attempts >= user.password_attempts_max {
+                        user.password = password.clone();
+                    } else {
+                        user.password_attempts += 1;
+                    }
                 }
             }
 

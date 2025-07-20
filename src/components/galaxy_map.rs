@@ -150,12 +150,21 @@ impl Widget for &GalacticMap {
         Canvas::default()
             .paint(|ctx| {
                 for system in &self.solar_systems {
+                    let mut color = Color::White;
+                    let mut size = MOVE_DISTANCE;
+
+                    // DEBUGGING ONLY
+                    // if system.has_component() {
+                    //     color = Color::Red;
+                    //     size *= 2.0;
+                    // }
+
                     ctx.draw(&Rectangle{
                         x: system.pos.0,
                         y: system.pos.1,
-                        width: MOVE_DISTANCE,
-                        height: MOVE_DISTANCE,
-                        color: Color::White,
+                        width: size,
+                        height: size,
+                        color: color,
                     });
                 }
                 // Draw selected position

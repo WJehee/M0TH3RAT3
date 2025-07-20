@@ -310,15 +310,15 @@ impl Widget for &mut App {
 
         // TODO: render current planet stats
 
-        if self.user.fuel == 0 {
-            let full = throbber_widgets_tui::Throbber::default()
-                .label("Geen brandstof...")
-                .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
-                .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
-                .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
-                .use_type(throbber_widgets_tui::WhichUse::Spin);
-            ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
-        }
+        // if self.user.fuel == 0 {
+        //     let full = throbber_widgets_tui::Throbber::default()
+        //         .label("Geen brandstof...")
+        //         .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
+        //         .throbber_style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(ratatui::style::Modifier::BOLD))
+        //         .throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
+        //         .use_type(throbber_widgets_tui::WhichUse::Spin);
+        //     ratatui::prelude::StatefulWidget::render(full, status, buf, &mut self.throbber_state);
+        // }
 
         if self.event {
             let full = throbber_widgets_tui::Throbber::default()
