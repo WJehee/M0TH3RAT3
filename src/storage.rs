@@ -9,8 +9,8 @@ use crate::{objects::SolarSystem, user::User};
 pub struct Storage {
     pub path: String,
     pub users: Vec<User>,
-    pub map: Vec<SolarSystem>,
     pub components: i32,
+    pub map: Vec<SolarSystem>,
 }
 
 impl Storage {

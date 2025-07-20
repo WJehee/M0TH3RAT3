@@ -41,11 +41,10 @@ pub struct Planet {
     radius: f64,
 
     // TODO: Random info, show in popup
-    // diameter_km: u32,
     // temp: i32,
     // gravity: f32,
     // hours_per_day: u32,
-    // tags: Vec<PlanetTag>,
+    planet_type: PlanetType,
 
     // Game related
     has_event: bool,
@@ -107,7 +106,11 @@ impl Planet {
     }
 
     fn get_color(&self) -> Color {
-        Color::Red
+        match self.planet_type {
+            PlanetType::Gas => Color::Green,
+            PlanetType::Ocean => Color::Blue,
+            PlanetType::Terrestrial => Color::Red,
+        }
     }
 }
 
@@ -120,18 +123,18 @@ enum PlanetSize {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-enum PlanetTag {
+enum PlanetType {
     Gas,
     Terrestrial,
     Ocean,
 }
 
-impl fmt::Display for PlanetTag {
+impl fmt::Display for PlanetType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let res = match self {
-            PlanetTag::Gas => "Gas",
-            PlanetTag::Terrestrial => "Aards",
-            PlanetTag::Ocean => "Oceaan",
+            PlanetType::Gas => "Gas",
+            PlanetType::Terrestrial => "Aards",
+            PlanetType::Ocean => "Oceaan",
         };
         write!(f, "{}", res)
     }

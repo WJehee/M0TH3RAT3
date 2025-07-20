@@ -107,7 +107,7 @@ impl LoginScreen {
                 }
             }
 
-            if user.username == username && user.password == password {
+            if user.password != "" && user.username == username && user.password == password {
                 return Some(user.clone());
             }
         }
