@@ -11,8 +11,8 @@ use ratatui::{
 use crate::{objects::SolarSystem, util::{within_radius, Event, ItemDiff, WARP_HOLD_DURATION}};
 
 const MOVE_DISTANCE: f64 = 0.1;
-const STAR_DISTANCE: f64 = MOVE_DISTANCE * 2.0;
-const WARP_DISTANCE: f64 = MOVE_DISTANCE * 20.0;
+const STAR_DISTANCE: f64 = MOVE_DISTANCE * 2.5;
+const WARP_DISTANCE: f64 = MOVE_DISTANCE * 30.0;
 
 pub struct GalacticMap {
     pub solar_systems: Vec<SolarSystem>,
@@ -156,6 +156,11 @@ impl Widget for &GalacticMap {
                     // DEBUGGING ONLY
                     // if system.has_component() {
                     //     color = Color::Red;
+                    //     size *= 2.0;
+                    // }
+                    //
+                    // if system.has_event() {
+                    //     color = Color::Yellow;
                     //     size *= 2.0;
                     // }
 

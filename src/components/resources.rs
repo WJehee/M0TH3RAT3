@@ -56,9 +56,10 @@ impl Widget for &Resources {
             ])
             .areas(area);
 
-        MyGauge::new("Kristallen", self.crystals as f64, 100.0, Color::Magenta).render(crystals, buf);
+        MyGauge::new("Kristallen", self.crystals as f64, 200.0, Color::Magenta).render(crystals, buf);
         MyGauge::new("Brandstof", self.fuel as f64, 100.0, Color::Red).render(fuel, buf);
         MyGauge::new("Reputatie", self.reputation as f64, 100.0, Color::Yellow).render(reputation, buf);
-        MyGauge::new("Componenten", self.components as f64, 16.0, Color::DarkGray).render(components, buf);
+        MyGauge::new("Componenten", self.components as f64, 50.0, Color::DarkGray).render(components, buf);
     }
 }
+

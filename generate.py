@@ -29,20 +29,20 @@ def generate_galaxy_data():
     planet_types = ["Gas", "Terrestrial", "Ocean"]
     galaxies = []
 
-    for _ in range(60):  # Generate between 1 and 5 galaxies
+    for _ in range(90):  # Generate between 1 and 5 galaxies
         galaxy_name = random.choice(galaxy_names)
         pos = [round(random.uniform(0, 30), 2) for _ in range(2)]
         planets = []
 
-        for _ in range(random.randint(2, 6)):  # Generate between 2 and 6 planets
+        for _ in range(random.choices([1, 2, 3, 4, 5, 6], weights=[0.2, 0.2, 0.2, 0.4, 0.1, 0.1])[0]):  # Generate between 2 and 6 planets
             planet_name = random.choice(planet_names)
             x = round(random.uniform(0, 100), 2)
             y = round(random.uniform(0, 100), 2)
             radius = round(random.uniform(1, 10), 2)
-            has_event = random.random() < (1 / 8)  # 1 in 8 probability
-            has_component = random.random() < (1 / 10)  # 1 in 10 probability
+            has_event = random.random() < (1 / 10)  # 1 in 8 probability
+            has_component = random.random() < (1 / 8)  # 1 in 10 probability
             crystals = random.choices([0, 1, 2, 3], weights=[0.6, 0.2, 0.15, 0.05])[0]  # 0 most probable
-            fuel = random.choices([0, 1, 2, 3], weights=[0.6, 0.2, 0.15, 0.05])[0]  # 0 most probable
+            fuel = random.choices([0, 1], weights=[0.95, 0.05])[0]  # 0 most probable
             planet_type = random.choice(planet_types)  # Randomly select planet type
 
             planet = {

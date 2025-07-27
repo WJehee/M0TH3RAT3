@@ -22,6 +22,8 @@
                 rust-analyzer
                 rustfmt
                 clippy
+                
+                python3
 
                 cool-retro-term
             ];
