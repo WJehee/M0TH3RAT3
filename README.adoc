@@ -1,4 +1,4 @@
-== M0TH3R@E
+== M0TH3R@3
 
 Custom TUI for managing a ship for the https://www.tuesdayknightgames.com/pages/mothership-rpg[Mothership TTRPG].
 Cooked up with https://ratatui.rs/[Ratatui] and:
