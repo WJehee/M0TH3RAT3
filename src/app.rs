@@ -15,7 +15,7 @@ use tachyonfx::{fx, EffectManager};
 use throbber_widgets_tui::ThrobberState;
 
 use crate::{
-    components::{crew::CrewStatus, diagnostics::Diagnostics, galaxy_map::GalacticMap, notifications::{Level, Notifications}, resources::Resources, star_map::StarMap}, storage::Storage, tui, user::User, util::{self, Event}
+    components::{crew::CrewStatus, diagnostics::Diagnostics, galaxy_map::GalacticMap, notifications::{Level, Notifications}, resources::Resources, star_map::StarMap, stock_market::StockMarket}, storage::Storage, tui, user::User, util::{self, Event}
 };
 
 #[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive)]
@@ -24,6 +24,7 @@ enum MenuItem {
     StarMap,
     Crew,
     Diagnostics,
+    StockMarket,
 }
 
 impl fmt::Display for MenuItem {
@@ -33,6 +34,7 @@ impl fmt::Display for MenuItem {
             MenuItem::StarMap => "Zonnestelsels",
             MenuItem::Crew => "Crew",
             MenuItem::Diagnostics => "Diagnostics",
+            MenuItem::StockMarket => "Beurs",
         };
         write!(f, "{}", res)
     }
@@ -51,7 +53,7 @@ impl MenuState {
         let next = current + offset;
         if next == -1 {
             // Set to last item in the list
-            self.selected = MenuItem::Diagnostics
+            self.selected = MenuItem::StockMarket
         } else {
             self.selected = match FromPrimitive::from_i8(next) {
                 Some(d2) => d2,
@@ -84,6 +86,7 @@ pub struct App {
     galaxy: GalacticMap,
     crew: CrewStatus,
     diagnostics: Diagnostics,
+    stock_market: StockMarket,
     notifications: Notifications,
 }
 
@@ -117,6 +120,7 @@ impl App {
             galaxy: GalacticMap::new(solar_systems.clone(), pos),
             crew: CrewStatus{},
             diagnostics: Diagnostics::new(),
+            stock_market: StockMarket::new(),
             notifications: Notifications::default(),
         };
         result.galaxy.update_system();
@@ -156,6 +160,9 @@ impl App {
     fn on_tick(&mut self) {
         self.throbber_state.calc_next();
         self.diagnostics.tick();
+        if let Some(headline) = self.stock_market.tick() {
+            self.notifications.push(Level::Info, headline);
+        }
     }
 
     fn render_frame(&mut self, frame: &mut Frame, elapsed: Duration) {
@@ -183,6 +190,10 @@ impl App {
                             if let Some(map) = &mut self.starmap {
                                 map.handle_press_event(key, self.last_key_pressed, self.last_press_time, self.user.username.clone())
                             } else { Vec::new() }
+                        },
+                        MenuItem::StockMarket => {
+                            self.stock_market.handle_press_event(key);
+                            Vec::new()
                         },
                         _ => { Vec::new() }
                     };
@@ -288,6 +299,7 @@ impl App {
             Line::from(MenuItem::StarMap.to_string()).alignment(Alignment::Center),
             Line::from(MenuItem::Crew.to_string()).alignment(Alignment::Center),
             Line::from(MenuItem::Diagnostics.to_string()).alignment(Alignment::Center),
+            Line::from(MenuItem::StockMarket.to_string()).alignment(Alignment::Center),
         ])
             .style(Style::default().fg(Color::White))
             .highlight_style(Style::default()
@@ -348,6 +360,7 @@ impl Widget for &mut App {
             },
             MenuItem::Crew      => { self.crew.render(inner, buf); },
             MenuItem::Diagnostics => { self.diagnostics.render(inner, buf); },
+            MenuItem::StockMarket => { self.stock_market.render(inner, buf); },
         }
     }
 }
