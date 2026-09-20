@@ -10,5 +10,5 @@ color-eyre = { workspace = true }
 log = "0.4"
 rand = "0.9"
 ratatui = { workspace = true }
-russh = "0.62"
+russh = "0.63"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net", "io-util", "time"] }

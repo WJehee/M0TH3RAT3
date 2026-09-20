@@ -82,7 +82,7 @@ Add new generic widgets to `crates/widgets`; keep domain-specific ones in the ap
 - `Storage::try_login` holds the login puzzle and is used by both the login screen and SSH password auth.
 
 ### Toolchain note
-russh is pinned below 0.63 because the dev shell ships rustc 1.88 and newer russh needs 1.89. Bump both together.
+The flake tracks `rust-bin.stable.latest`, so the toolchain moves whenever `flake.lock` is updated. Editors that bundle their own rust-analyzer (the Neovim wrapper does) refuse toolchains more than a few releases old, so run `nix flake update` when that complaint appears.
 
 ## UI Framework Notes
 
