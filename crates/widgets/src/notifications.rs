@@ -29,15 +29,6 @@ impl Level {
         }
     }
 
-    pub fn label(&self) -> &'static str {
-        match self {
-            Level::Info => "INFO",
-            Level::Warning => "WAARSCHUWING",
-            Level::Error => "FOUT",
-            Level::Critical => "KRITIEK",
-        }
-    }
-
     /// Short bracketed marker shown in front of menu items and in the
     /// notification title. Errors and warnings share `[!]` and differ only in
     /// color, so the marker alone is readable on a monochrome terminal while
@@ -55,6 +46,44 @@ impl Level {
     }
 }
 
+/// User-facing strings so each app can pick its own language. The queued
+/// template must contain one `{}` which is replaced by the queue length.
+#[derive(Debug, Clone, Copy)]
+pub struct Labels {
+    pub info: &'static str,
+    pub warning: &'static str,
+    pub error: &'static str,
+    pub critical: &'static str,
+    pub queued: &'static str,
+}
+
+impl Labels {
+    pub const ENGLISH: Labels = Labels {
+        info: "INFO",
+        warning: "WARNING",
+        error: "ERROR",
+        critical: "CRITICAL",
+        queued: "{} queued",
+    };
+
+    pub const DUTCH: Labels = Labels {
+        info: "INFO",
+        warning: "WAARSCHUWING",
+        error: "FOUT",
+        critical: "KRITIEK",
+        queued: "{} in wachtrij",
+    };
+
+    pub fn for_level(&self, level: Level) -> &'static str {
+        match level {
+            Level::Info => self.info,
+            Level::Warning => self.warning,
+            Level::Error => self.error,
+            Level::Critical => self.critical,
+        }
+    }
+}
+
 /// A single queued message. `target` names the screen the message is about,
 /// if any, so the menu can flag that screen with the level's marker.
 #[derive(Debug, Clone)]
@@ -69,11 +98,21 @@ pub struct Notification<T> {
 #[derive(Debug)]
 pub struct Notifications<T> {
     queue: VecDeque<Notification<T>>,
+    labels: Labels,
 }
 
 impl<T> Default for Notifications<T> {
     fn default() -> Self {
-        Self { queue: VecDeque::new() }
+        Self::new(Labels::ENGLISH)
+    }
+}
+
+impl<T> Notifications<T> {
+    pub fn new(labels: Labels) -> Self {
+        Self {
+            queue: VecDeque::new(),
+            labels,
+        }
     }
 }
 
@@ -116,9 +155,10 @@ impl<T> StatefulWidget for &Notifications<T> {
             " ".into(),
             current.level.marker_span(),
             " ".into(),
-            current.level.label().bold().fg(color),
+            self.labels.for_level(current.level).bold().fg(color),
             if pending > 1 {
-                format!(" ({pending} in wachtrij) ").into()
+                let queued = self.labels.queued.replace("{}", &pending.to_string());
+                format!(" ({queued}) ").into()
             } else {
                 " ".into()
             },

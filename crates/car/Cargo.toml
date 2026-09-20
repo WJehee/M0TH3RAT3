@@ -1,0 +1,16 @@
+[package]
+name = "car"
+version = "0.1.0"
+edition = "2021"
+description = "In-car display: navigation, music and vehicle status"
+
+[[bin]]
+name = "car"
+path = "src/main.rs"
+
+[dependencies]
+widgets = { path = "../widgets" }
+color-eyre = { workspace = true }
+ratatui = { workspace = true }
+tachyonfx = { workspace = true }
+throbber-widgets-tui = { workspace = true }

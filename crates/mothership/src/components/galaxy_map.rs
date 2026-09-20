@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use ratatui::{
     crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{
         canvas::{
@@ -7,6 +5,8 @@ use ratatui::{
         }, Block, Gauge, Widget
     }
 };
+
+use widgets::KeyHold;
 
 use crate::{objects::SolarSystem, util::{within_radius, Event, ItemDiff, WARP_HOLD_DURATION}};
 
@@ -51,7 +51,7 @@ impl GalacticMap {
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant, can_warp: bool) -> Vec<Event> {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, hold: &KeyHold, can_warp: bool) -> Vec<Event> {
         if key_event.code != KeyCode::Enter {
             self.warped = false;
         }
@@ -61,43 +61,33 @@ impl GalacticMap {
             KeyCode::Char('w') => { self.selected_pos.1 += MOVE_DISTANCE; },
             KeyCode::Char('s') => { self.selected_pos.1 -= MOVE_DISTANCE; },
             KeyCode::Enter => {
-                if let Some(key) = last_key_pressed {
-                    if within_radius(self.selected_pos, self.current_pos, WARP_DISTANCE) && can_warp {
-                        if key == key_event {
-                            self.warp_progress = last_press_time.elapsed().as_secs_f64() / Duration::from_secs(WARP_HOLD_DURATION).as_secs_f64();
-                            if self.warp_progress > 1.0 {
-                                self.warp_progress = 1.0;
-                            }
-                        }
-                        if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
-                            self.warp_progress = 0.0;
+                if within_radius(self.selected_pos, self.current_pos, WARP_DISTANCE) && can_warp {
+                    self.warp_progress = hold.progress(key_event, WARP_HOLD_DURATION);
+                    // Stop draining fuel after 1 time
+                    if hold.completed(key_event, WARP_HOLD_DURATION) && !self.warped {
+                        self.warp_progress = 0.0;
+                        self.warped = true;
+                        self.current_pos = self.selected_pos;
+                        let mut events = Vec::new();
+                        // Deplete fuel
+                        events.push(Event::Item(ItemDiff{
+                            crystals: 0,
+                            fuel: -1,
+                            components: 0,
+                        }));
 
-                            // Stop draining fuel after 1 time
-                            if !self.warped {
-                                self.warped = true;
-                                self.current_pos = self.selected_pos;
-                                let mut events = Vec::new();
-                                // Deplete fuel
-                                events.push(Event::Item(ItemDiff{
-                                    crystals: 0,
-                                    fuel: -1,
-                                    components: 0,
-                                }));
-
-                                match self.check_for_systems() {
-                                    Some(Some(i)) => {
-                                        self.current_system = Some(i);
-                                        events.push(Event::NewSystem(Some(self.solar_systems[i].clone())));
-                                    },
-                                    Some(None) => {
-                                        self.current_system = None;
-                                        events.push(Event::NewSystem(None));
-                                    },
-                                    None => {}
-                                }
-                                return events;
-                            }
+                        match self.check_for_systems() {
+                            Some(Some(i)) => {
+                                self.current_system = Some(i);
+                                events.push(Event::NewSystem(Some(self.solar_systems[i].clone())));
+                            },
+                            Some(None) => {
+                                self.current_system = None;
+                                events.push(Event::NewSystem(None));
+                            },
+                            None => {}
                         }
+                        return events;
                     }
                 }
             },

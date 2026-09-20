@@ -1,0 +1,23 @@
+[package]
+name = "mothership"
+version = "0.1.0"
+edition = "2021"
+description = "M0TH3R@3: ship management interface for Mothership TTRPG players"
+
+[[bin]]
+name = "mothership"
+path = "src/main.rs"
+
+[dependencies]
+widgets = { path = "../widgets" }
+serve = { path = "../serve" }
+clap = { version = "4", features = ["derive"] }
+color-eyre = { workspace = true }
+env_logger = "0.11"
+log = "0.4"
+num-traits = "0.2.19"
+ratatui = { workspace = true }
+serde = { version = "1.0.219", features = ["serde_derive"] }
+serde_json = "1.0.140"
+tachyonfx = { workspace = true }
+throbber-widgets-tui = { workspace = true }

@@ -154,7 +154,7 @@ impl Widget for &Diagnostics {
             .y_axis(y_axis);
         chart.render(signal_area, buf);
 
-        let labels: Vec<String> = (0..BAR_COUNT).map(|i| format!("{:02}", i)).collect();
+        let labels: Vec<String> = (0..BAR_COUNT).map(|i| format!("{i:02}")).collect();
         let bars: Vec<Bar> = self
             .bars_current
             .iter()

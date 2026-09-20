@@ -14,7 +14,7 @@ use ratatui::{
     widgets::{Axis, Block, Chart, Dataset, GraphType, Paragraph, Row, Table},
 };
 
-use crate::util::XorShift;
+use widgets::util::XorShift;
 
 /// Number of price samples kept per company, which is also the chart width in
 /// data points. Braille markers render two points per column, so 120 samples

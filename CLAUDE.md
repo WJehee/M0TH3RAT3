@@ -4,15 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-M0TH3R@3 is a Rust TUI (Terminal User Interface) application for managing a spaceship in the Mothership TTRPG. Built with Ratatui, it provides a retro terminal aesthetic optimized for `cool-retro-term`.
+M0TH3R@3 is a Cargo workspace of Rust TUI (Terminal User Interface) applications built with Ratatui, with a retro terminal aesthetic optimized for `cool-retro-term`. A shared widget library feeds two apps: a spaceship interface for Mothership TTRPG players, and an in-car display.
 
 ## Build Commands
 
 ```bash
-just build          # Build with cargo
-just run            # Run debug binary
-just cool-run       # Run in cool-retro-term with Futuristic profile
-cargo run -- path.json  # Run with custom storage file
+just build          # Build every crate
+just run            # Run the mothership binary
+just run path.json  # Mothership with a custom storage file
+just car            # Run the car display
+just cool-run       # Mothership in cool-retro-term with Futuristic profile
+just serve          # Mothership as an SSH server (--listen, --host-key flags)
+just lint           # cargo clippy --workspace
 ```
 
 ### Cross-compilation (ARM)
@@ -28,21 +31,33 @@ nix-shell           # Provides cargo, rustup, rust-analyzer, clippy, rustfmt
 
 ## Architecture
 
-### Module Structure
-- **main.rs** - Entry point, panic/error hooks that restore terminal state
-- **app.rs** - Main game loop, UI rendering, input handling
-- **tui.rs** - Terminal initialization/cleanup (raw mode, alternate screen)
-- **storage.rs** - JSON persistence for users, planets, components
-- **login.rs** - Password-protected login screen with effects
-- **user.rs** - Player data (position, resources: fuel, crystals, reputation)
-- **objects.rs** - Game world objects (SolarSystem, Planet)
-- **components/** - Reusable UI widgets:
-  - `galaxy_map.rs` - 2D galactic navigation
-  - `star_map.rs` - Solar system view
-  - `resources.rs` - Resource gauges
-  - `crew.rs` - Crew display with ASCII art
+### Workspace layout
+- **crates/widgets** (lib `widgets`) - Everything not tied to a domain:
+  - `tui.rs` - Local terminal initialization/cleanup (raw mode, alternate screen)
+  - `runtime.rs` - `Program` trait, `run` frame loop generic over backend and `EventSource` (`CrosstermEvents` for local, `ChannelEvents` for remote), `KeyHold` for long-press detection, panic hooks
+  - `menu.rs` - Generic `Menu<T>` (cursor vs active item, caller renders lines)
+  - `notifications.rs` - `Notifications<T>` queue with per-language `Labels`
+  - `gauge.rs` - `LabeledGauge`
+  - `diagnostics.rs` - Fake signal/spectrum charts
+  - `util.rs` - `center`, `XorShift`
+- **crates/serve** (lib `serve`) - SSH transport on russh:
+  - `lib.rs` - `Service` trait (authenticate, run_session), `run_server`, `ServerConfig`
+  - `handler.rs` - russh `Handler`: pty/shell requests spawn a session thread running `widgets::run`
+  - `input.rs` - Raw terminal bytes to `KeyEvent`s (Ctrl-C and Ctrl-D map to Esc)
+  - `writer.rs` - `io::Write` buffer per frame, forwarded over the channel by a tokio task
+  - `keys.rs` - Ed25519 host key load/generate
+- **crates/mothership** (bin `mothership`) - The ship game:
+  - `main.rs` - clap CLI; local mode runs the app in this terminal, `--serve` implements `serve::Service` over a `Mutex<Storage>` shared by all sessions
+  - `app.rs` - `App` implements `Program`; menu, screens, game events
+  - `storage.rs`, `user.rs`, `objects.rs`, `login.rs` - Persistence, player, world, login screen
+  - `components/` - `galaxy_map`, `star_map`, `resources`, `crew`, `stock_market`
+- **crates/car** (bin `car`) - In-car display skeleton:
+  - `app.rs` - `App` implements `Program`; Navigation, Music, Vehicle screens
+  - `screens/navigation.rs`, `screens/music.rs` - Demo data with TODOs for real sources
 
-### Game Screens (MenuItem enum)
+Add new generic widgets to `crates/widgets`; keep domain-specific ones in the app crate that uses them. Widgets take their user-facing strings from the app so languages do not leak into the library.
+
+### Mothership screens (MenuItem enum)
 1. **GalacticMap** - Navigate between solar systems (WASD, uses fuel)
 2. **StarMap** - Select planets within a system (Arrow keys)
 3. **Crew** - View crew member status
@@ -55,6 +70,11 @@ nix-shell           # Provides cargo, rustup, rust-analyzer, clippy, rustfmt
 ### Data Persistence
 - JSON storage (default: `default.json`, fallback: `fallback.json`)
 - Stores: users, solar systems with planets, shared component pool
+- Sessions play on a clone of the storage and write back through `App::apply_to` when they end. In serve mode the map is replaced whole, so the last player to leave wins on planet state (see the TODO in `app.rs`).
+- `Storage::try_login` holds the login puzzle and is used by both the login screen and SSH password auth.
+
+### Toolchain note
+russh is pinned below 0.63 because the dev shell ships rustc 1.88 and newer russh needs 1.89. Bump both together.
 
 ## UI Framework Notes
 

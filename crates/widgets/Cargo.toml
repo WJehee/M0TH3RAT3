@@ -1,0 +1,10 @@
+[package]
+name = "widgets"
+version = "0.1.0"
+edition = "2021"
+description = "Retro terminal widgets and app runtime shared by the mothership and car displays"
+
+[dependencies]
+color-eyre = { workspace = true }
+ratatui = { workspace = true }
+throbber-widgets-tui = { workspace = true }

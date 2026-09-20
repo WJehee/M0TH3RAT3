@@ -1,6 +1,6 @@
-use std::time::Duration;
-
 use ratatui::{crossterm::event::{KeyCode, KeyEvent}, prelude::*, widgets::{canvas::{Canvas}, Block, Gauge}};
+
+use widgets::KeyHold;
 
 use crate::{objects::Planet, util::{Event, WARP_HOLD_DURATION}};
 
@@ -21,23 +21,16 @@ impl StarMap {
         }
     }
 
-    pub fn handle_press_event(&mut self, key_event: KeyEvent, last_key_pressed: Option<KeyEvent>, last_press_time: std::time::Instant, username: String) -> Vec<Event> {
+    pub fn handle_press_event(&mut self, key_event: KeyEvent, hold: &KeyHold, username: String) -> Vec<Event> {
         match key_event.code {
             KeyCode::Left   => { self.selected_location = (self.selected_location + self.planets.len() - 1) % self.planets.len() },
             KeyCode::Right  => { self.selected_location = (self.selected_location + self.planets.len() + 1) % self.planets.len() },
-            KeyCode::Enter  => { 
-                if let Some(key) = last_key_pressed {
-                    if self.current_location != self.selected_location {
-                        if key == key_event {
-                            self.warp_progress = last_press_time.elapsed().as_secs_f64() / Duration::from_secs(WARP_HOLD_DURATION).as_secs_f64();
-                            if self.warp_progress > 1.0 {
-                                self.warp_progress = 1.0;
-                            }
-                        }
-                        if last_press_time.elapsed() > Duration::from_secs(WARP_HOLD_DURATION) {
-                            self.current_location = self.selected_location;
-                            self.warp_progress = 0.0;
-                        }
+            KeyCode::Enter  => {
+                if self.current_location != self.selected_location {
+                    self.warp_progress = hold.progress(key_event, WARP_HOLD_DURATION);
+                    if hold.completed(key_event, WARP_HOLD_DURATION) {
+                        self.current_location = self.selected_location;
+                        self.warp_progress = 0.0;
                     }
                 }
             },

@@ -1,12 +1,46 @@
 == M0TH3R@3
 
-Custom TUI for managing a ship for the https://www.tuesdayknightgames.com/pages/mothership-rpg[Mothership TTRPG].
-Cooked up with https://ratatui.rs/[Ratatui] and:
+A set of retro terminal widgets, built with https://ratatui.rs/[Ratatui], and the displays made from them.
+Everything looks best in `cool-retro-term`.
+
+=== Workspace layout
+
+`crates/widgets`::
+  Shared library: terminal setup, the frame loop (`Program` trait, `run`), key-hold tracking, and generic widgets (menu with notification markers, notification queue, labeled gauge, fake diagnostics charts).
+`crates/serve`::
+  SSH server for any `widgets::Program`, built on https://github.com/warp-tech/russh[russh]. Each connected client gets its own session thread running the same frame loop as the local terminal. Modelled after https://github.com/ricott1/frittura-ssh[frittura-ssh] (which is GPL and therefore reimplemented rather than depended on).
+`crates/mothership`::
+  Ship management interface for players of the https://www.tuesdayknightgames.com/pages/mothership-rpg[Mothership TTRPG]: galaxy and star maps, crew, stock market, resources. Dutch in-game text. Runs in the local terminal or as an SSH server.
+`crates/car`::
+  In-car display skeleton: navigation, music and vehicle screens. Runs on demo data until a GPS receiver, a music player and vehicle telemetry are hooked up.
+
+=== Running
+
+[source,sh]
+----
+just run            # mothership, uses default.json / fallback.json
+just run ship.json  # mothership with a specific save file
+just car            # car display
+just cool-run       # mothership in cool-retro-term
+just serve          # mothership as an SSH server on 0.0.0.0:2222
+----
+
+=== Serving over SSH
+
+[source,sh]
+----
+mothership --serve ship.json                      # listen on 0.0.0.0:2222
+mothership --serve --listen 127.0.0.1:2299 ship.json
+mothership --serve --host-key /var/lib/mothership/host_key ship.json
+----
+
+Players connect with `ssh -p 2222 <username>@<host>` and log in with the username and password from the save file (the login puzzle with `password_start` and attempt counts applies, exactly as on the login screen). Esc, Ctrl-C or Ctrl-D ends the session and writes the player's progress back to the save file.
+
+The Ed25519 host key is generated on first start at `mothership_host_key` (ignored by git). Keep it: clients pin it in `known_hosts`.
+
+Built on:
 
 * https://github.com/arkbig/throbber-widgets-tui[Throbber widgets tui]
 * https://github.com/junkdog/tachyonfx[Tachyonfx]
 
-It looks the best when using `cool-retro-term`.
-
 Partially inspired by: https://anodyneprintware.com/planets/[Matt Umland's rimspace planet generator].
-

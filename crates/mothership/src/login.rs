@@ -6,20 +6,22 @@ use ratatui::{
 };
 use tachyonfx::{fx, EffectManager};
 
-use crate::{tui, user::User, util};
+use widgets::{tui, util::center};
+
+use crate::{storage::Storage, user::User, util};
 
 pub struct LoginScreen {
     exit: bool,
     pub username: String,
     pub password: String,
     password_selected: bool,
-    user_list: Vec<User>,
+    storage: Storage,
     user: Option<User>,
     effects: EffectManager<()>,
 }
 
 impl LoginScreen {
-    pub fn new(user_list: Vec<User>) -> LoginScreen {
+    pub fn new(storage: Storage) -> LoginScreen {
         let mut effects: EffectManager<()> = EffectManager::default();
         effects.add_effect(
             fx::prolong_start(0, fx::coalesce(3000))
@@ -29,7 +31,7 @@ impl LoginScreen {
             username: String::new(),
             password: String::new(),
             password_selected: false,
-            user_list,
+            storage,
             user: None,
             effects,
         }
@@ -94,24 +96,7 @@ impl LoginScreen {
     }
 
     fn try_login(&mut self, username: String, password: String) -> Option<User> {
-        for user in self.user_list.iter_mut() {
-
-            if user.password == "" {
-                let parts: Vec<&str> = password.split("-").collect();
-                if parts[0] == user.password_start {
-                    if user.password_attempts >= user.password_attempts_max {
-                        user.password = password.clone();
-                    } else {
-                        user.password_attempts += 1;
-                    }
-                }
-            }
-
-            if user.password != "" && user.username == username && user.password == password {
-                return Some(user.clone());
-            }
-        }
-        None
+        self.storage.try_login(&username, &password)
     }
 
     fn clear(&mut self) {
@@ -137,7 +122,7 @@ impl Widget for &mut LoginScreen {
         ];
         text.extend(Text::from(lines));
 
-        let area = util::center(
+        let area = center(
             area,
             Constraint::Length((text.width()+10) as u16),
             Constraint::Length((text.height()+5) as u16),
