@@ -16,7 +16,7 @@ pub struct Storage {
 impl Storage {
     pub fn new(path: String) -> Storage {
         Storage {
-            path: path,
+            path,
             users: Vec::new(),
             map: Vec::new(),
             components: 0,
@@ -24,11 +24,15 @@ impl Storage {
     }
 
     pub fn load(storage_path: String) -> Result<Storage> {
-        let mut file = File::open(storage_path)?;
+        let mut file = File::open(&storage_path)?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
 
-        let result: Storage = serde_json::from_str(&buffer).expect("JSON to be valid");
+        let mut result: Storage = serde_json::from_str(&buffer).expect("JSON to be valid");
+        // The file may have been copied from elsewhere (a seed file installed
+        // by the NixOS module, a backup), and saves must go back to where it
+        // was loaded from, not to whatever path the copy remembers.
+        result.path = storage_path;
 
         Ok(result)
     }

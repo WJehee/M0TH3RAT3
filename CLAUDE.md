@@ -16,7 +16,15 @@ just car            # Run the car display
 just cool-run       # Mothership in cool-retro-term with Futuristic profile
 just serve          # Mothership as an SSH server (--listen, --host-key flags)
 just lint           # cargo clippy --workspace
+just nix-build      # naersk release build via the flake
+just nix-check      # nix flake check, includes the NixOS VM test
 ```
+
+### Nix
+- `flake.nix` builds each binary as its own package with naersk and exports `nixosModules.mothership`.
+- `nix/module.nix` is the NixOS module: `services.mothership.{enable,port,listenAddress,openFirewall,initialStorage,logLevel,package}`. State is fixed at `/var/lib/mothership` (systemd `StateDirectory`); the seed save is only installed when no save exists.
+- `nix/test.nix` is a NixOS VM test that drives a real ssh client through a pty. Run it with `nix build .#checks.x86_64-linux.mothership-service -L`.
+- `Storage::load` overwrites the `path` field with the path it loaded from, so a copied save file writes back to its new location.
 
 ### Cross-compilation (ARM)
 ```bash

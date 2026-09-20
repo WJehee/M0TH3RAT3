@@ -31,6 +31,14 @@ cool-car *args:
 lint:
     cargo clippy --workspace
 
+# Build the release binaries with nix (result/bin/mothership)
+nix-build:
+    nix build .#mothership .#car
+
+# Run the nix checks, including the NixOS VM test of the SSH service
+nix-check:
+    nix flake check -L
+
 # Cross shell
 cross-shell:
     nix-shell -p cargo rustup cargo-cross

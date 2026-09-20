@@ -99,6 +99,9 @@ impl<S: Service> Connection<S> {
 
         let (input_tx, events) = ChannelEvents::new();
         let backend = CrosstermBackend::new(ChannelWriter::new(out_tx));
+        // A client without a real terminal (scripted ssh, a pty that was
+        // never sized) reports 0x0, which would render nothing at all.
+        let (cols, rows) = if cols == 0 || rows == 0 { (80, 24) } else { (cols, rows) };
         let options = TerminalOptions {
             viewport: Viewport::Fixed(Rect::new(0, 0, cols, rows)),
         };

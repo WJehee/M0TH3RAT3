@@ -38,6 +38,30 @@ Players connect with `ssh -p 2222 <username>@<host>` and log in with the usernam
 
 The Ed25519 host key is generated on first start at `mothership_host_key` (ignored by git). Keep it: clients pin it in `known_hosts`.
 
+=== Deploying on NixOS
+
+The flake exports `packages.x86_64-linux.mothership` (and `car`) built with naersk, and a NixOS module `nixosModules.mothership` that runs the SSH server as a hardened systemd service under a dynamic user.
+
+[source,nix]
+----
+{
+  inputs.mothership.url = "github:wjehee/M0TH3RAT3";
+
+  # in the host configuration:
+  imports = [ inputs.mothership.nixosModules.mothership ];
+  services.mothership = {
+    enable = true;
+    port = 2222;            # default
+    openFirewall = true;
+    initialStorage = ./ship.json;   # seeded into /var/lib/mothership on first start
+  };
+}
+----
+
+State lives in `/var/lib/mothership`: the save file `ship.json` and the host key. The seed file is only copied when no save exists, so redeploys keep the players' progress. The embedded SSH server is independent of the system `sshd`, so both can run on one machine on different ports.
+
+`nix flake check` runs a NixOS VM test that boots the module, logs in over SSH with a password, explores a planet and checks that the save file was written and the host key survives a restart.
+
 Built on:
 
 * https://github.com/arkbig/throbber-widgets-tui[Throbber widgets tui]
