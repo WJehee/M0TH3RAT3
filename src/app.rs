@@ -18,13 +18,23 @@ use crate::{
     components::{crew::CrewStatus, diagnostics::Diagnostics, galaxy_map::GalacticMap, notifications::{Level, Notifications}, resources::Resources, star_map::StarMap, stock_market::StockMarket}, storage::Storage, tui, user::User, util::{self, Event}
 };
 
-#[derive(Debug, Copy, Clone, FromPrimitive, ToPrimitive)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 enum MenuItem {
     GalacticMap = 0,
     StarMap,
     Crew,
     Diagnostics,
     StockMarket,
+}
+
+impl MenuItem {
+    const ALL: [MenuItem; 5] = [
+        MenuItem::GalacticMap,
+        MenuItem::StarMap,
+        MenuItem::Crew,
+        MenuItem::Diagnostics,
+        MenuItem::StockMarket,
+    ];
 }
 
 impl fmt::Display for MenuItem {
@@ -87,7 +97,7 @@ pub struct App {
     crew: CrewStatus,
     diagnostics: Diagnostics,
     stock_market: StockMarket,
-    notifications: Notifications,
+    notifications: Notifications<MenuItem>,
 }
 
 impl App {
@@ -161,7 +171,7 @@ impl App {
         self.throbber_state.calc_next();
         self.diagnostics.tick();
         if let Some(headline) = self.stock_market.tick() {
-            self.notifications.push(Level::Info, headline);
+            self.notifications.push(Level::Info, headline, Some(MenuItem::StockMarket));
         }
     }
 
@@ -207,7 +217,7 @@ impl App {
                                 // Earn 1 reputation per component
                                 self.user.reputation += diff.components;
                                 if fuel_before > 0 && self.user.fuel <= 0 {
-                                    self.notifications.push(Level::Critical, "Brandstof is op!");
+                                    self.notifications.push(Level::Critical, "Brandstof is op!", Some(MenuItem::GalacticMap));
                                 }
                             },
                             Event::NewSystem(Some(system)) => {
@@ -220,7 +230,7 @@ impl App {
                                 }
                             },
                             Event::RandomEvent => {
-                                self.notifications.push(Level::Warning, "Willekeurige gebeurtenis! Ga naar de leiding.");
+                                self.notifications.push(Level::Warning, "Willekeurige gebeurtenis! Ga naar de leiding.", Some(MenuItem::StarMap));
                             },
                         }
                     }
@@ -289,18 +299,24 @@ impl App {
             Constraint::Percentage(25),
         ]).areas(area);
 
-        let gmap = match self.user.fuel > 0 {
-            true =>  Line::from(MenuItem::GalacticMap.to_string()),
-            false =>  Line::from(MenuItem::GalacticMap.to_string()).crossed_out(),
-        };
+        // Each item is prefixed with the marker of its most severe pending
+        // notification, so the player can see which screen needs attention
+        // without reading the notification panel.
+        let items = MenuItem::ALL.map(|item| {
+            let mut spans: Vec<Span<'_>> = Vec::with_capacity(2);
+            if let Some(level) = self.notifications.highest_level_for(&item) {
+                spans.push(level.marker_span());
+                spans.push(" ".into());
+            }
+            let mut name = Span::from(item.to_string());
+            if item == MenuItem::GalacticMap && self.user.fuel <= 0 {
+                name = name.crossed_out();
+            }
+            spans.push(name);
+            Line::from(spans).alignment(Alignment::Center)
+        });
 
-        let menu = List::new([
-            gmap.alignment(Alignment::Center),
-            Line::from(MenuItem::StarMap.to_string()).alignment(Alignment::Center),
-            Line::from(MenuItem::Crew.to_string()).alignment(Alignment::Center),
-            Line::from(MenuItem::Diagnostics.to_string()).alignment(Alignment::Center),
-            Line::from(MenuItem::StockMarket.to_string()).alignment(Alignment::Center),
-        ])
+        let menu = List::new(items)
             .style(Style::default().fg(Color::White))
             .highlight_style(Style::default()
                 .bold()

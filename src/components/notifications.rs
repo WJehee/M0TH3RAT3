@@ -8,7 +8,10 @@ use ratatui::{
 };
 use throbber_widgets_tui::{Throbber, ThrobberState};
 
-#[derive(Debug, Clone, Copy)]
+/// Severity of a notification. The variants are declared from least to most
+/// severe so the derived `Ord` can pick the worst pending notification for a
+/// screen; do not reorder them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Level {
     Info,
     Warning,
@@ -21,7 +24,7 @@ impl Level {
         match self {
             Level::Info => Color::Cyan,
             Level::Warning => Color::Yellow,
-            Level::Error => Color::Magenta,
+            Level::Error => Color::Red,
             Level::Critical => Color::Red,
         }
     }
@@ -35,41 +38,71 @@ impl Level {
         }
     }
 
-    pub fn icon(&self) -> &'static str {
+    /// Short bracketed marker shown in front of menu items and in the
+    /// notification title. Errors and warnings share `[!]` and differ only in
+    /// color, so the marker alone is readable on a monochrome terminal while
+    /// the color carries the severity on a color one.
+    pub fn marker(&self) -> &'static str {
         match self {
-            Level::Info => "⊕",
-            Level::Warning => "⊞",
-            Level::Error => "!",
-            Level::Critical => "●",
+            Level::Info => "[?]",
+            Level::Warning | Level::Error | Level::Critical => "[!]",
         }
+    }
+
+    /// The marker styled in the level's color, ready to be dropped into a line.
+    pub fn marker_span(&self) -> Span<'static> {
+        self.marker().bold().fg(self.color())
     }
 }
 
+/// A single queued message. `target` names the screen the message is about,
+/// if any, so the menu can flag that screen with the level's marker.
 #[derive(Debug, Clone)]
-pub struct Notification {
+pub struct Notification<T> {
     pub level: Level,
     pub message: String,
+    pub target: Option<T>,
 }
 
-#[derive(Debug, Default)]
-pub struct Notifications {
-    queue: VecDeque<Notification>,
+/// FIFO of notifications, generic over the type that identifies a screen so
+/// this component does not depend on the app's menu enum.
+#[derive(Debug)]
+pub struct Notifications<T> {
+    queue: VecDeque<Notification<T>>,
 }
 
-impl Notifications {
-    pub fn push(&mut self, level: Level, message: impl Into<String>) {
+impl<T> Default for Notifications<T> {
+    fn default() -> Self {
+        Self { queue: VecDeque::new() }
+    }
+}
+
+impl<T: PartialEq> Notifications<T> {
+    pub fn push(&mut self, level: Level, message: impl Into<String>, target: Option<T>) {
         self.queue.push_back(Notification {
             level,
             message: message.into(),
+            target,
         });
     }
 
     pub fn dismiss(&mut self) {
         self.queue.pop_front();
     }
+
+    /// The most severe level among all pending notifications aimed at
+    /// `target`, not just the one currently displayed, so a screen stays
+    /// flagged until every message about it has been dismissed.
+    pub fn highest_level_for(&self, target: &T) -> Option<Level> {
+        self.queue
+            .iter()
+            .filter(|n| n.target.as_ref() == Some(target))
+            .map(|n| n.level)
+            .max()
+    }
 }
 
-impl StatefulWidget for &Notifications {
+impl<T> StatefulWidget for &Notifications<T> {
     type State = ThrobberState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -79,19 +112,17 @@ impl StatefulWidget for &Notifications {
 
         let color = current.level.color();
         let pending = self.queue.len();
-        let mut title_spans: Vec<Span<'_>> = Vec::with_capacity(5);
-        title_spans.push(" ".into());
-        if !matches!(current.level, Level::Critical) {
-            title_spans.push(current.level.icon().bold().fg(color));
-            title_spans.push(" ".into());
-        }
-        title_spans.push(current.level.label().bold().fg(color));
-        title_spans.push(if pending > 1 {
-            format!(" ({} in wachtrij) ", pending).into()
-        } else {
-            " ".into()
-        });
-        let title = Line::from(title_spans);
+        let title = Line::from(vec![
+            " ".into(),
+            current.level.marker_span(),
+            " ".into(),
+            current.level.label().bold().fg(color),
+            if pending > 1 {
+                format!(" ({pending} in wachtrij) ").into()
+            } else {
+                " ".into()
+            },
+        ]);
 
         let block = Block::bordered()
             .title(title)
